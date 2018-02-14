@@ -1,7 +1,6 @@
 import * as CryptoJS from "crypto-js";
 import * as _ from "lodash";
 import { Transaction } from "../interfaces/transaction";
-import { Block } from "../interfaces/block";
 
 export class BlockchainService {
 

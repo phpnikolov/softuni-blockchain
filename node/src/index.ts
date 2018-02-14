@@ -1,6 +1,7 @@
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as expressValidator from "express-validator/check";
+import * as cors from "cors";
 import * as _ from "lodash";
 import { Transaction } from "./interfaces/transaction";
 
@@ -9,8 +10,10 @@ import { NodeController } from "./controllers/node.controller";
 
 let nodeCtrl = new NodeController();
 
-var app = express();
+const app = express();
+
 app.use(bodyParser.json()); // support json encoded bodies
+app.use(cors());
 
 // Information about the Node Clien
 app.get('/info', (req, res) => {
