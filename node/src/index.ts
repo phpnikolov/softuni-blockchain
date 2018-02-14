@@ -157,12 +157,12 @@ new class extends CliService {
         this.quetion('Set block difficulty', nodeCtrl.chain.difficulty.toString()).then((dificulty: string) => {
             nodeCtrl.chain.difficulty = parseInt(dificulty);
 
-            this.quetion('Set Server port', '5555').then((port: string) => {
-                app.listen(parseInt(port), () => {
-                    console.log(`\nServer started: http://localhost:${port}`);
+            this.quetion('Set Server hostname', '127.0.0.1').then((hostname: string) => {
+                app.listen(5555, hostname, () => {
+                    console.log(`\nServer started: http://${hostname}:5555`);
                     this.rl.close();
                 }).on('error', (err: Error) => {
-                    console.error(`\nError: Can't start server http://localhost:${port}`);
+                    console.error(`\nError: Can't start server http://${hostname}:5555`);
                 });
             });
         });

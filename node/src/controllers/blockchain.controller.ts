@@ -53,13 +53,13 @@ export class BlockchainController {
 
         newBlock.blockHash = this.blockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce);
 
-        // validate block
-        this.validateBlock(newBlock, prevBlock);
-
         // set blockHash
         for (let i = 0; i < blockTrxs.length; i++) {
             blockTrxs[i].blockHash = newBlock.blockHash;
         }
+
+        // validate block
+        this.validateBlock(newBlock, prevBlock);
 
         // adds the block to the chain
         this.blockchain.push(newBlock);
@@ -207,17 +207,28 @@ export class BlockchainController {
     private getBalance(address: string): number {
         let balance = 0;
 
-        // confirmed + pending
-        let allTrxs: Transaction[] = this.getTransactions();
+         let confirmedTxs: Transaction[] = this.getConfirmedTransactions();
 
-        for (let i = 0; i < allTrxs.length; i++) {
-            const trx = allTrxs[i];
+         for (let i = 0; i < confirmedTxs.length; i++) {
+             const trx = confirmedTxs[i];
+ 
+             if (trx.to == address) {
+                 // input transaction, add amount to balance 
+                 balance += trx.amount;
+             }
+             else if (trx.from == address) {
+                 // outgoing transaction, subtract amount from balance
+                 balance -= trx.amount
+             }
+         }
 
-            if (trx.to == address && trx.blockHash) {
-                // input transaction, add amount to balance (only mined transactions)
-                balance += trx.amount;
-            }
-            else if (trx.from == address) {
+
+        let pendingTxs: Transaction[] = this.getPendingTransactions();
+
+        for (let i = 0; i < pendingTxs.length; i++) {
+            const trx = pendingTxs[i];
+
+            if (trx.from == address) {
                 // outgoing transaction, subtract amount from balance
                 balance -= trx.amount
             }

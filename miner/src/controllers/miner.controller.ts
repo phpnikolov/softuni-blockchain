@@ -17,10 +17,9 @@ export class MinerController {
 
     public constructor(
         private nodeHostname: string,
-        private nodePort: number,
         private miningAddress: string
     ) {
-        this.nodeUri = `http://${this.nodeHostname}:${this.nodePort}`;
+        this.nodeUri = `http://${this.nodeHostname}:5555`;
     }
 
 
@@ -100,7 +99,7 @@ export class MinerController {
     private submitBlock(transactions: Transaction[], nonce: number): void {
         request({
             method: 'POST',
-            uri: `http://${this.nodeHostname}:${this.nodePort}/blocks`,
+            uri: this.nodeUri + '/blocks',
             json: {
                 transactions: transactions,
                 nonce: nonce
@@ -120,11 +119,11 @@ export class MinerController {
     }
 
     public start(): void {
-        // Sync with the Node every 2 sec
+        // Sync with the Node every 1 sec
         this.sync();
         setInterval(() => {
             this.sync();
-        }, 2000);
+        }, 1000);
 
         // show miner stats every 5 sec
         let prevProcessedHashes: number = this.processedHashes;
