@@ -1,0 +1,54 @@
+<div class="container">
+
+    <button type="button" class="btn btn-info btn-block mt-2" (click)="createAccount()">Create New Account</button>
+
+    <div class="form-group mt-2" *ngIf="accounts.length > 0">
+        <label for="account-select">Accounts:</label>
+        <select class="form-control" id="account-select" [(ngModel)]="selectedAccount">
+          <option *ngFor="let account of accounts; let i = index" [ngValue]="account">{{account.name}}</option>
+        </select>
+    </div>
+
+
+
+    <div class="card mt-3" *ngIf="selectedAccount">
+        <div class="card-header">
+            {{selectedAccount.address}}
+            <div ngbDropdown class="account-dropdown">
+                <button class="btn btn-link" ngbDropdownToggle><i class="fa fa-ellipsis-v"></i></button>
+                <div ngbDropdownMenu>
+                    <button class="dropdown-item" (click)="renameAccount(selectedAccount)"><i class="fa fa-pencil"></i> Rename</button>
+                    <button class="dropdown-item" (click)="showPrivateKey(selectedAccount)"><i class="fa fa-eye"></i> PrivateKey</button>
+                    <button class="dropdown-item" (click)="deleteAccount(selectedAccount)"><i class="fa fa-trash-o"></i> Delete</button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Balance: <span class="text-success">not implemented</span></h5>
+            <hr>
+            <form (ngSubmit)="sendTransaction(selectedAccount)" [formGroup]="fg">
+                <div class="form-group">
+                    <label>Recipient address</label>
+                    <input required type="text" class="form-control" formControlName="recipient" [(ngModel)]="trxRecipient">
+                </div>
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input required type="number" class="form-control" formControlName="amount" [(ngModel)]="trxAmount">
+                </div>
+                <button type="submit" [disabled]="!fg.valid" class="btn btn-primary">Send</button>
+            </form>
+
+            <hr>
+
+            <h5 class="card-title">Transaction history</h5>
+
+            <p class="card-text">
+                not implemented
+            </p>
+
+
+        </div>
+    </div>
+
+
+</div>
