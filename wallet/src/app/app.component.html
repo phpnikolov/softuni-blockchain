@@ -24,7 +24,7 @@
             </div>
         </div>
         <div class="card-body">
-            <h5 class="card-title">Balance: <span class="text-success">not implemented</span></h5>
+            <h5 class="card-title">Balance: <span class="text-success">{{getAccountBalance(selectedAccount)}}</span></h5>
             <hr>
             <form (ngSubmit)="sendTransaction(selectedAccount)" [formGroup]="fg">
                 <div class="form-group">
@@ -38,15 +38,29 @@
                 <button type="submit" [disabled]="!fg.valid" class="btn btn-primary">Send</button>
             </form>
 
-            <hr>
+            <table class="table mt-5">
+                <thead>
+                    <tr>
+                        <th scope="col">TxHash</th>
+                        <th scope="col">Block</th>
+                        <th scope="col">Timestamp</th>
+                        <th scope="col">From</th>
+                        <th scope="col">To</th>
+                        <th scope="col">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let tx of getAccountTxs(selectedAccount)" [ngClass]="{'text-info' : !tx.blockHash}">
+                        <td title="{{tx.transactionHash}}">{{tx.transactionHash | slice:0:12}}</td>
+                        <td title="{{tx.blockHash}}">{{tx.blockHash | slice:0:12}}</td>
+                        <td>{{tx.timeCreated | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                        <td title="{{tx.from}}">{{tx.from | slice:0:12}}</td>
+                        <td title="{{tx.to}}">{{tx.to | slice:0:12}}</td>
+                        <td>{{tx.amount}}</td>
+                    </tr>
 
-            <h5 class="card-title">Transaction history</h5>
-
-            <p class="card-text">
-                not implemented
-            </p>
-
-
+                </tbody>
+            </table>
         </div>
     </div>
 

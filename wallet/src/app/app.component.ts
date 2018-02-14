@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
+import * as _ from "lodash";
 import * as elliptic from "elliptic";
 import * as CryptoJS from "crypto-js";
 
@@ -22,6 +23,7 @@ import { CryptoService } from './services/crypto.service';
 export class AppComponent {
 
   public accounts: CryptoAccount[];
+  public accountsTrxs: { string: Transaction[] }[] = [];
   public selectedAccount: CryptoAccount;
 
   public trxRecipient: string;
@@ -46,11 +48,16 @@ export class AppComponent {
     this.accounts = storage.getVal('accounts') || [];
 
     this.useAccount(0);
+    this.syncAllAccountsTrxs();
+
+    // sync all accounts every 5 sec
+    setInterval(() => {
+      this.syncAllAccountsTrxs();
+    }, 5000);
   }
 
 
   public createAccount() {
-
     let privateKey = this.crypto.generatePrivateKey();
     let publicKey = this.crypto.getPublicKey(privateKey);
     let address = this.crypto.getAddress(publicKey);
@@ -63,8 +70,12 @@ export class AppComponent {
     };
 
     let idx = this.accounts.push(account) - 1;
-    this.storage.setVal('accounts', this.accounts);
+    this.storeAccounts();
     this.useAccount(idx);
+  }
+
+  private storeAccounts():void {
+    this.storage.setVal('accounts', this.accounts);
   }
 
   public useAccount(accountIdx: number): void {
@@ -84,6 +95,7 @@ export class AppComponent {
     let accountName = prompt("Please enter name:", account.name);
     if (accountName) {
       account.name = accountName;
+      this.storeAccounts();
     }
   }
   public deleteAccount(account: CryptoAccount): void {
@@ -93,7 +105,7 @@ export class AppComponent {
         this.accounts.splice(idx, 1);
       }
 
-      this.storage.setVal('accounts', this.accounts);
+      this.storeAccounts();
       this.useAccount(0);
     }
   }
@@ -128,10 +140,53 @@ export class AppComponent {
         (httpErr) => {
           console.error('Transaction error: ', httpErr);
         });
+        this.syncAccountTrxs(account);
+    }
+  }
 
+  private syncAccountTrxs(account: CryptoAccount): void {
+    // get confirmed+pending
+    this.httpClient.request('GET', `http://localhost:5555/address/${account.address}/transactions`, {
+      observe: 'body',
+      responseType: 'json'
+    }).subscribe(
+      (data: Transaction[]) => {
+        this.accountsTrxs[account.address] = _.orderBy(data, ['timeCreated'], ['desc']);
+      });
+  }
+
+
+  private syncAllAccountsTrxs(): void {
+    for (let i = 0; i < this.accounts.length; i++) {
+      this.syncAccountTrxs(this.accounts[i]);
+    }
+  }
+
+  public getAccountTxs(account: CryptoAccount): Transaction[] {
+    return this.accountsTrxs[account.address] || [];
+  }
+
+  public getAccountBalance(account: CryptoAccount): number {
+    let balance: number = 0;
+    let txs = this.getAccountTxs(account);
+
+    for (let i = 0; i < txs.length; i++) {
+      if (txs[i].to == account.address && txs[i].blockHash) {
+        // input transaction, add amount to balance (only mined transactions)
+        balance += txs[i].amount;
+      }
+      else if (txs[i].from == account.address) {
+        // outgoing transaction, subtract amount from balance
+        balance -= txs[i].amount
+      }
     }
 
+    return balance;
+
   }
+
+
+
 
 
 }
