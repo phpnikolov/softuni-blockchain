@@ -1,20 +1,14 @@
 import * as CryptoJS from "crypto-js";
 import * as _ from "lodash";
 import { Transaction } from "../interfaces/transaction";
-import { Block } from "../interfaces/block";
 
 export class BlockchainService {
 
     public static calculatekBlockHash(prevBlockHash: string, transactions: Transaction[], nonce): string {
         // sort transaction by create timne
         let trxsSorted = _.sortBy(transactions, ['timeCreated']);
-        let trxsHashes: string[] = [];
+        let trxsHashes: string[] = _.map(trxsSorted, 'transactionHash');;
         
-        transactions.forEach(trx => {
-            let trxHash: string = BlockchainService.calculateTransactionHash(trx);
-            trxsHashes.push(trxHash);
-        });
-
         return CryptoJS.SHA256(JSON.stringify([
             prevBlockHash,
             trxsHashes,

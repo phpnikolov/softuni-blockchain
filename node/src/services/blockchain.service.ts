@@ -7,7 +7,7 @@ export class BlockchainService {
     public static calculatekBlockHash(prevBlockHash: string, transactions: Transaction[], nonce): string {
         // sort transaction by create timne
         let trxsSorted = _.sortBy(transactions, ['timeCreated']);
-        let trxsHashes: string[] = _.map(trxsSorted, 'user');;
+        let trxsHashes: string[] = _.map(trxsSorted, 'transactionHash');;
         
         return CryptoJS.SHA256(JSON.stringify([
             prevBlockHash,

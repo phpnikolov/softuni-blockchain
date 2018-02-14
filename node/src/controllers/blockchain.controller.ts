@@ -49,6 +49,7 @@ export class BlockchainController {
         };
 
         newBlock.blockHash = BlockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce);
+        console.log(JSON.stringify([prevBlock.blockHash, newBlock.transactions, newBlock.nonce, newBlock.blockHash], null, 4));
 
         // set blockHash
         for (let i = 0; i < blockTrxs.length; i++) {
@@ -137,13 +138,14 @@ export class BlockchainController {
         if (newBlock.prevBlockHash !== prevBlock.blockHash) {
             throw 'Invalid previous block hash.';
         }
+        if (BlockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce) != newBlock.blockHash) {
+            throw 'Invalid block hash.'
+        }
 
         if (BlockchainService.calculateHashDifficulty(newBlock.blockHash) < this.difficulty) {
             throw 'Block hash have less difficulty.';
         }
-        if (BlockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce) != newBlock.blockHash) {
-            throw 'Invalid block hash.';
-        }
+        
 
     }
 
@@ -169,6 +171,11 @@ export class BlockchainController {
             }
         }
         else {
+            // validate sender address with public key
+            if (CryptoService.getAddress(trx.senderPubKey) !== trx.from) {
+                throw 'Sender address didn\'t match with Public Key'
+            }
+
             // validate signature
             if (!CryptoService.isValidSignature(trx.transactionHash, trx.senderSignature, trx.senderPubKey)) {
                 throw 'Invalid signature.';

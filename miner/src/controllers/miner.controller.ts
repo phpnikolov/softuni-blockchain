@@ -33,13 +33,13 @@ export class MinerController {
             uri: this.nodeUri + '/info',
             json: true
         }, (error, response, body) => {
-            if (response.statusCode == 200) {
+            if (!error && response.statusCode == 200) {
                 this.lastBlockHash = body.lastBlockHash;
-                this.difficulty = body.difficulty;
+                this.difficulty = Number(body.difficulty);
                 this.minerReward = Number(body.minerReward);
             }
             else {
-                console.error('Can\n get info from the Node!');
+                console.error('Can\'n get info from the Node!');
             }
         });
 
@@ -47,7 +47,7 @@ export class MinerController {
             uri: this.nodeUri + '/transactions/pending',
             json: true
         }, (error, response, body) => {
-            if (response.statusCode == 200) {
+            if (!error && response.statusCode == 200) {
                 // add miner reward transaction
                 let trxReward: Transaction = {
                     to: this.miningAddress,
@@ -62,7 +62,7 @@ export class MinerController {
                 this.pendingTransactions = body;
             }
             else {
-                console.error('Can\n get pending transactions from the Node!');
+                console.error('Can\'n get pending transactions from the Node!');
             }
         });
     }
@@ -82,17 +82,17 @@ export class MinerController {
         if (BlockchainService.calculateHashDifficulty(blockHash) >= this.difficulty) {
             console.log(`Block found!!! Nonce ${nonce}; Hash: ${blockHash}`);
             this.submitBlock(this.pendingTransactions, nonce);
-            this.lastBlockHash = blockHash;
-            this.pendingTransactions = [];
-            nonce = 0;
+            this.lastBlockHash = undefined;
+            this.pendingTransactions = undefined;
+            this.minerReward = undefined;
+            this.lastBlockHash = undefined;
         }
         else {
             nonce++;
+            setTimeout(() => {
+                this.mine(nonce);
+            }, 0);
         }
-
-        setTimeout(() => {
-            this.mine(nonce);
-        }, 0);
     }
 
 
@@ -105,13 +105,15 @@ export class MinerController {
                 nonce: nonce
             }
         }, (error, response, body) => {
-            if (response.statusCode == 201) {
+            if (!error && response.statusCode == 201) {
                 console.log('Block is accepted.');
                 this.sync();
             }
             else {
                 console.error('Error: Block is rejected!', body);
             }
+
+            this.sync();
             this.mine(0);
         });
     }
@@ -128,7 +130,7 @@ export class MinerController {
         let prevTime: number = (new Date()).getTime();
         setInterval(() => {
             let timeNow = (new Date()).getTime();
-            let pastTime =timeNow - prevTime;
+            let pastTime = timeNow - prevTime;
 
             let hashPerSecond = Math.round((this.processedHashes - prevProcessedHashes) / (pastTime / 1000));
 
