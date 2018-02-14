@@ -53,14 +53,13 @@ export class BlockchainController {
 
         newBlock.blockHash = this.blockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce);
 
+        // validate block
+        this.validateBlock(newBlock, prevBlock);
+
         // set blockHash
         for (let i = 0; i < blockTrxs.length; i++) {
             blockTrxs[i].blockHash = newBlock.blockHash;
         }
-
-        // validate block
-        this.validateBlock(newBlock, prevBlock);
-
 
         // adds the block to the chain
         this.blockchain.push(newBlock);
