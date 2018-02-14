@@ -4,7 +4,7 @@ import { Transaction } from "../interfaces/transaction";
 
 export class BlockchainService {
 
-    public static calculatekBlockHash(prevBlockHash: string, transactions: Transaction[], nonce): string {
+    public calculatekBlockHash(prevBlockHash: string, transactions: Transaction[], nonce): string {
         // sort transaction by create timne
         let trxsSorted = _.sortBy(transactions, ['timeCreated']);
         let trxsHashes: string[] = _.map(trxsSorted, 'transactionHash');;
@@ -17,16 +17,15 @@ export class BlockchainService {
     }
 
 
-    public static calculateTransactionHash(trx:Transaction): string {
+    public calculateTransactionHash(trx:Transaction): string {
         return CryptoJS.SHA256(JSON.stringify([trx.from, trx.to, trx.amount, trx.timeCreated])).toString();
     }
-
 
     /**
      * Calculate how many leading zeros `hash` have
      * @param hash 
      */
-    public static calculateHashDifficulty(hash: string) {
+    public calculateHashDifficulty(hash: string) {
         let difficulty = 0;
         for (let i = 0; i < hash.length; i++) {
             if (hash[i] == '0') {

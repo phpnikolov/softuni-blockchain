@@ -5,7 +5,7 @@ import { Transaction } from '../interfaces/transaction';
 
 
 export class MinerController {
-
+    private blockchainService:BlockchainService = new BlockchainService;
     private nodeUri: string;
 
     private lastBlockHash: string;
@@ -55,7 +55,7 @@ export class MinerController {
                     timeCreated: (new Date()).getTime()
                 };
 
-                trxReward.transactionHash = BlockchainService.calculateTransactionHash(trxReward);
+                trxReward.transactionHash = this.blockchainService.calculateTransactionHash(trxReward);
 
                 body.unshift(trxReward);
 
@@ -76,10 +76,11 @@ export class MinerController {
             return;
         }
 
-        let blockHash = BlockchainService.calculatekBlockHash(this.lastBlockHash, this.pendingTransactions, nonce);
+        let blockHash = this.blockchainService.calculatekBlockHash(this.lastBlockHash, this.pendingTransactions, nonce);
         this.processedHashes++;
+        let hashDifficulty:number = this.blockchainService.calculateHashDifficulty(blockHash);
 
-        if (BlockchainService.calculateHashDifficulty(blockHash) >= this.difficulty) {
+        if (hashDifficulty >= this.difficulty) {
             console.log(`Block found!!! Nonce ${nonce}; Hash: ${blockHash}`);
             this.submitBlock(this.pendingTransactions, nonce);
             this.lastBlockHash = undefined;

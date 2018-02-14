@@ -1,38 +1,32 @@
 import * as elliptic from "elliptic";
 import * as CryptoJS from "crypto-js";
 
-
 export class CryptoService {
+    public ec = new elliptic.ec('secp256k1');
 
-    public static generatePrivateKey(): string {
-        let ec = new elliptic.ec('secp256k1');
-
-        let key = ec.genKeyPair();
+    public generatePrivateKey(): string {
+        let key = this.ec.genKeyPair();
     
-
         return key.getPrivate().toString(16);
     }
 
-    public static getPublicKey(privateKey: string): string {
-        let ec = new elliptic.ec('secp256k1');
-        let key = ec.keyFromPrivate(privateKey);
+    public getPublicKey(privateKey: string): string {
+        let key = this.ec.keyFromPrivate(privateKey);
 
         return key.getPublic().encode('hex');
     }
 
-    public static getAddress(publicKey: string): string {
+    public getAddress(publicKey: string): string {
         return CryptoJS.RIPEMD160(publicKey).toString();
     }
 
-    public static getSignature(hexString: string, privateKey: string): string {
-        let ec = new elliptic.ec('secp256k1');
-        let key = ec.keyFromPrivate(privateKey);
+    public getSignature(hexString: string, privateKey: string): string {
+        let key = this.ec.keyFromPrivate(privateKey);
         return key.sign(hexString).toDER('hex');
     }
 
-    public static isValidSignature(hexString:string, signature:string, publicKey:string): boolean {
-        let ec = new elliptic.ec('secp256k1');
-        let key = ec.keyFromPublic(publicKey, 'hex');
+    public isValidSignature(hexString:string, signature:string, publicKey:string): boolean {
+        let key = this.ec.keyFromPublic(publicKey, 'hex');
 
         return key.verify(hexString, signature);
     }

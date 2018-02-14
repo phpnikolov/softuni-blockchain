@@ -6,6 +6,9 @@ import { CryptoService } from "../services/crypto.service";
 
 
 export class BlockchainController {
+    private cryptoService:CryptoService = new CryptoService;
+    private blockchainService:BlockchainService = new BlockchainService;
+
     private blockchain: Block[] = [];
     public difficulty: number = 4;
     public minerReward: number = 5;
@@ -31,7 +34,7 @@ export class BlockchainController {
             timeCreated: (new Date()).getTime(),
             nonce: 0
         };
-        block.blockHash = BlockchainService.calculatekBlockHash(block.prevBlockHash, block.transactions, block.nonce);
+        block.blockHash = this.blockchainService.calculatekBlockHash(block.prevBlockHash, block.transactions, block.nonce);
         this.blockchain.push(block);
     }
 
@@ -48,8 +51,7 @@ export class BlockchainController {
             nonce: nonce
         };
 
-        newBlock.blockHash = BlockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce);
-        console.log(JSON.stringify([prevBlock.blockHash, newBlock.transactions, newBlock.nonce, newBlock.blockHash], null, 4));
+        newBlock.blockHash = this.blockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce);
 
         // set blockHash
         for (let i = 0; i < blockTrxs.length; i++) {
@@ -138,11 +140,11 @@ export class BlockchainController {
         if (newBlock.prevBlockHash !== prevBlock.blockHash) {
             throw 'Invalid previous block hash.';
         }
-        if (BlockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce) != newBlock.blockHash) {
+        if (this.blockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce) != newBlock.blockHash) {
             throw 'Invalid block hash.'
         }
 
-        if (BlockchainService.calculateHashDifficulty(newBlock.blockHash) < this.difficulty) {
+        if (this.blockchainService.calculateHashDifficulty(newBlock.blockHash) < this.difficulty) {
             throw 'Block hash have less difficulty.';
         }
         
@@ -154,7 +156,7 @@ export class BlockchainController {
         if ((trx.amount > 0) === false) {
             throw 'Balance must be positive number.';
         }
-        if (trx.transactionHash != BlockchainService.calculateTransactionHash(trx)) {
+        if (trx.transactionHash != this.blockchainService.calculateTransactionHash(trx)) {
             throw 'Invalid transaction hash.';
         }
 
@@ -172,12 +174,12 @@ export class BlockchainController {
         }
         else {
             // validate sender address with public key
-            if (CryptoService.getAddress(trx.senderPubKey) !== trx.from) {
+            if (this.cryptoService.getAddress(trx.senderPubKey) !== trx.from) {
                 throw 'Sender address didn\'t match with Public Key'
             }
 
             // validate signature
-            if (!CryptoService.isValidSignature(trx.transactionHash, trx.senderSignature, trx.senderPubKey)) {
+            if (!this.cryptoService.isValidSignature(trx.transactionHash, trx.senderSignature, trx.senderPubKey)) {
                 throw 'Invalid signature.';
             }
             // Check if sender have enough money
