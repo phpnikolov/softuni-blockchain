@@ -60,20 +60,20 @@ app.get('/blocks/:blockHash', (req, res) => {
     return res.status(404).json({ error: 'Block not found!' });
 });
 
-// Returns confirmed transactions
-app.get('/transactions/confirmed', (req, res) => {
+// Returns confirmed & pending transactions
+app.get('/transactions/', (req, res) => {
     res.json(nodeCtrl.chain.getTransactions());
 });
 
-// 	Returns confirmed transaction for specified :trxHash
-app.get('/transactions/confirmed/:trxHash', (req, res) => {
-    let trx = nodeCtrl.chain.getTransaction(req.params.trxHash);
+// Returns confirmed transactions
+app.get('/transactions/confirmed', (req, res) => {
+    res.json(nodeCtrl.chain.getConfirmedTransactions());
+});
 
-    if (trx) {
-        return res.json(trx);
-    }
 
-    return res.status(404).json({ error: 'Transaction not found!' });
+// Returns pending transactions
+app.get('/transactions/pending', (req, res) => {
+    return res.json(nodeCtrl.chain.getPendingTransactions());
 });
 
 // Create pending transaction
@@ -111,15 +111,32 @@ app.post('/transactions/pending', [
     }
 });
 
-// Returns pending transactions
-app.get('/transactions/pending', (req, res) => {
-    return res.json(nodeCtrl.chain.getPendingTransactions());
+
+// 	Returns transaction for specified :trxHash
+app.get('/transactions/:trxHash', (req, res) => {
+    let trx = nodeCtrl.chain.getTransaction(req.params.trxHash);
+
+    if (trx) {
+        return res.json(trx);
+    }
+
+    return res.status(404).json({ error: 'Transaction not found!' });
+});
+
+
+// Returns confirmed & pending transactions for specified :address
+app.get('/address/:address/transactions/', (req, res) => {
+    let address:string = req.params.address;
+    let txs:Transaction[] = nodeCtrl.chain.getTransactions();
+
+    let addrTrxs = _.filter(txs, (trx: Transaction) => { return trx.to == address || trx.from == address; });
+    return res.json(addrTrxs);
 });
 
 // Returns confirmed transactions for specified :address
 app.get('/address/:address/transactions/confirmed', (req, res) => {
     let address:string = req.params.address;
-    let confirmedTrxs:Transaction[] = nodeCtrl.chain.getTransactions();
+    let confirmedTrxs:Transaction[] = nodeCtrl.chain.getConfirmedTransactions();
 
     let addrTrxs = _.filter(confirmedTrxs, (trx: Transaction) => { return trx.to == address || trx.from == address; });
     return res.json(addrTrxs);

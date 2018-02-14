@@ -84,9 +84,11 @@ export class BlockchainController {
 
     public addPendingTransaction(trx: Transaction): void {
         // check if exists in pending transactions
-        if (this.getPendingTransaction(trx.blockHash)) {
+        if (this.getPendingTransaction(trx.transactionHash)) {
              throw 'The transactions is already added.';
         }
+        // pending transactions should not have blockHash
+        trx.blockHash = undefined;
 
         this.validateTrasaction(trx);
         this.pendingTrxs.push(trx);
@@ -100,14 +102,19 @@ export class BlockchainController {
         return _.find(this.pendingTrxs, (trx: Transaction) => { return trx.transactionHash == hash; }); 
     }
 
+    public getConfirmedTransactions() : Transaction[] {
+        return _.flatten(_.map(this.blockchain, 'transactions'));
+    }
+
+    public getConfirmedTransaction(hash: string): Transaction {
+        const trxs: Transaction[] = this.getConfirmedTransactions();
+
+        return _.find(trxs, (trx: Transaction) => { return trx.transactionHash == hash; });
+    }
+
     public getTransactions(): Transaction[] {
-        let trxs: Transaction[] = [];
-
-        for (let i = 0; i < this.blockchain.length; i++) {
-            trxs = trxs.concat(this.blockchain[i].transactions);
-        }
-
-        return trxs;
+        // confirmed + pending
+        return this.getConfirmedTransactions().concat(this.getPendingTransactions());
     }
 
     public getTransaction(hash: string): Transaction {
@@ -160,7 +167,7 @@ export class BlockchainController {
             throw 'Invalid transaction hash.';
         }
 
-        if (this.getTransaction(trx.transactionHash)) {
+        if (this.getConfirmedTransaction(trx.transactionHash)) {
             throw 'The transactions is already in the blockchain.';
         }
 
@@ -194,7 +201,7 @@ export class BlockchainController {
     */
     private filterPendingTransactions():void {
         _.remove(this.pendingTrxs, (trx: Transaction) => {
-            return this.getTransaction(trx.transactionHash);
+            return this.getConfirmedTransaction(trx.transactionHash);
         });
     }
 
@@ -202,13 +209,13 @@ export class BlockchainController {
         let balance = 0;
 
         // confirmed + pending
-        let allTrxs: Transaction[] = this.getTransactions().concat(this.getPendingTransactions());
+        let allTrxs: Transaction[] = this.getTransactions();
 
         for (let i = 0; i < allTrxs.length; i++) {
             const trx = allTrxs[i];
 
-            if (trx.to == address) {
-                // input transaction, add amount to balance
+            if (trx.to == address && trx.blockHash) {
+                // input transaction, add amount to balance (only mined transactions)
                 balance += trx.amount;
             }
             else if (trx.from == address) {
