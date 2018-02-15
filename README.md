@@ -2,6 +2,32 @@
 
 This project is created only for educational purposes.
 
+## Run Node
+
+```
+cd ./node
+npm install
+tsc
+npm start
+```
+
+## Run Miner
+
+```
+cd ./miner
+npm install
+tsc
+npm start
+```
+
+## Run Wallet
+
+```
+cd ./wallet
+npm install
+ng serve
+```
+
 ## Node API Endpoints
 
 REST API that take care about Peers, Blocks and Transactions
