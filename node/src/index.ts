@@ -22,13 +22,13 @@ app.get('/info', (req, res) => {
 
 // Miners submit their work here
 app.post('/blocks', [
-    expressValidator.check('transactions').exists(),
-    expressValidator.check('nonce').exists()
+    expressValidator.check('transactions', "'transactions' is required parameter").exists(),
+    expressValidator.check('nonce', "'nonce' is required parameter").exists()
 
 ], (req, res) => {
     let errors = expressValidator.validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res.status(400).json({ error: _.first(_.map(errors.array(), 'msg')) });
     }
 
     let nonce: number = Number(req.body['nonce']) || 0;
@@ -39,7 +39,7 @@ app.post('/blocks', [
         return res.status(201).json();
     }
     catch (ex) {
-        return res.status(400).json({ errors: [ex] });
+        return res.status(400).json({ error: ex });
     }
 });
 
@@ -78,18 +78,18 @@ app.get('/transactions/pending', (req, res) => {
 
 // Create pending transaction
 app.post('/transactions/pending', [
-    expressValidator.check('transactionHash').exists(),
-    expressValidator.check('from').exists(),
-    expressValidator.check('to').exists(),
-    expressValidator.check('amount').exists(),
-    expressValidator.check('senderPubKey').exists(),
-    expressValidator.check('senderSignature').exists(),
-    expressValidator.check('timeCreated').exists(),
+    expressValidator.check('transactionHash', "'transactionHash' is required parameter").exists(),
+    expressValidator.check('from', "'from' is required parameter").exists(),
+    expressValidator.check('to', "'to' is required parameter").exists(),
+    expressValidator.check('amount', "'amount' is required parameter").exists(),
+    expressValidator.check('senderPubKey', "'senderPubKey' is required parameter").exists(),
+    expressValidator.check('senderSignature', "'senderSignature' is required parameter").exists(),
+    expressValidator.check('timeCreated', "'timeCreated' is required parameter").exists(),
 
 ], (req, res) => {
     let errors = expressValidator.validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res.status(400).json({ error:_.first(_.map(errors.array(), 'msg')) });
     }
 
     let trx: Transaction = {
@@ -107,7 +107,7 @@ app.post('/transactions/pending', [
         return res.status(201).json();
     }
     catch (ex) {
-        return res.status(400).json({ errors: [ex] });
+        return res.status(400).json({ error: ex });
     }
 });
 
@@ -157,12 +157,13 @@ new class extends CliService {
         this.quetion('Set block difficulty', nodeCtrl.chain.difficulty.toString()).then((dificulty: string) => {
             nodeCtrl.chain.difficulty = parseInt(dificulty);
 
-            this.quetion('Set Server hostname', '127.0.0.1').then((hostname: string) => {
-                app.listen(5555, hostname, () => {
-                    console.log(`\nServer started: http://${hostname}:5555`);
+            this.quetion('Set Server hostname', 'localhost').then((hostname: string) => {
+                let port:number = 5555;
+                app.listen(port, hostname, () => {
+                    console.log(`\nServer started: http://${hostname}:${port}`);
                     this.rl.close();
                 }).on('error', (err: Error) => {
-                    console.error(`\nError: Can't start server http://${hostname}:5555`);
+                    console.error(`\nError: Can't start server http://${hostname}:${port}`);
                 });
             });
         });
