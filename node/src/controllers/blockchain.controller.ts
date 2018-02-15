@@ -24,13 +24,20 @@ export class BlockchainController {
             return;
         }
 
-        let trxs: Transaction[] = [];
+        // donate 100,000,000 coins to Faucet address
+        let txFaucet:Transaction = {
+            to: '7c2fda3a3089042b458fe85da748914ea33e2497',
+            amount: 100000000,
+            timeCreated: (new Date()).getTime()
+        }
+
+        txFaucet.transactionHash = this.blockchainService.calculateTransactionHash(txFaucet);
 
         let block: Block = {
             index: 0,
             prevBlockHash: Array(64).join("0"),
             difficulty: 0,
-            transactions: trxs,
+            transactions: [txFaucet],
             timeCreated: (new Date()).getTime(),
             nonce: 0
         };
