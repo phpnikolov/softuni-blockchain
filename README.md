@@ -20,6 +20,15 @@ tsc
 npm start
 ```
 
+## Run Faucet
+
+```
+cd ./faucet
+npm install
+tsc
+npm start
+```
+
 ## Run Wallet
 
 ```
