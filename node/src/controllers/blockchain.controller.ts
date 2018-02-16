@@ -42,6 +42,11 @@ export class BlockchainController {
             nonce: 0
         };
         block.blockHash = this.blockchainService.calculatekBlockHash(block.prevBlockHash, block.transactions, block.nonce);
+
+        for (let i = 0; i < block.transactions.length; i++) {
+            block.transactions[i].blockHash = block.blockHash;
+        }
+
         this.blockchain.push(block);
     }
 
