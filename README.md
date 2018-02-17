@@ -11,21 +11,13 @@ tsc
 npm start
 ```
 
-## Run Miner
+Url: http://localhost:5555/info
+
+## Run Wallet
 
 ```
-cd ./miner
+cd ./wallet
 npm install
-tsc
-npm start
-```
-
-## Run Faucet
-
-```
-cd ./faucet
-npm install
-tsc
 npm start
 ```
 
@@ -41,15 +33,25 @@ npm start
 
 Url: http://localhost:4221/
 
-## Run Wallet
+## Run Faucet
 
 ```
-cd ./wallet
+cd ./faucet
 npm install
+tsc
 npm start
 ```
 
 Url: http://localhost:4222/
+
+## Run Miner
+
+```
+cd ./miner
+npm install
+tsc
+npm start
+```
 
 ## Node API Endpoints
 
@@ -61,6 +63,7 @@ GET | /info | Information about the Node Client (name, verssion, etc.)
 POST | /blocks | Miners submit blocks here
 GET | /blocks | Returns all blocks from the blockchain
 GET | /blocks/:blockHash | Returns а block for specified :blockHash
+GET | /blocks/:blockHash/transactions | Returns transactions for specified :blockHash
 GET | /transactions/ | Returns confirmed & pending transactions
 GET | /transactions/confirmed | Returns confirmed transactions
 GET | /transactions/pending | Returns pending transactions

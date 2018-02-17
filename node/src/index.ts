@@ -60,6 +60,17 @@ app.get('/blocks/:blockHash', (req, res) => {
     return res.status(404).json({ error: 'Block not found!' });
 });
 
+// Returns transactions for specified :blockHash
+app.get('/blocks/:blockHash/transactions', (req, res) => {
+    let block = nodeCtrl.chain.getBlock(req.params.blockHash);
+
+    if (block) {
+        return res.json(block.transactions);
+    }
+
+    return res.status(404).json({ error: 'Block not found!' });
+});
+
 // Returns confirmed & pending transactions
 app.get('/transactions/', (req, res) => {
     res.json(nodeCtrl.chain.getTransactions());
