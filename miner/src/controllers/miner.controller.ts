@@ -10,7 +10,7 @@ export class MinerController {
 
     private lastBlockHash: string;
     private difficulty: number;
-    private minerReward: number;
+    private minerReward: string;
     private pendingTransactions: Transaction[];
 
     private processedHashes = 0;
@@ -35,7 +35,7 @@ export class MinerController {
             if (!error && response.statusCode == 200) {
                 this.lastBlockHash = body.lastBlockHash;
                 this.difficulty = Number(body.difficulty);
-                this.minerReward = Number(body.minerReward);
+                this.minerReward = body.minerReward;
             }
             else {
                 console.error('Can\'n get info from the Node!');
@@ -50,7 +50,7 @@ export class MinerController {
                 // add miner reward transaction
                 let trxReward: Transaction = {
                     to: this.miningAddress,
-                    amount: Number(this.minerReward),
+                    amount: this.minerReward,
                     timeCreated: (new Date()).getTime()
                 };
 
