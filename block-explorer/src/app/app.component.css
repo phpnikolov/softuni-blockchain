@@ -1,0 +1,32 @@
+.account-dropdown {
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.account-dropdown .dropdown-toggle {
+    font-size: 18px;
+    line-height: 18px;
+    padding: 14px 20px;
+    cursor: pointer;
+}
+
+.account-dropdown.show .dropdown-toggle,
+.account-dropdown:hover .dropdown-toggle {
+    color: #0056b3;
+}
+
+.account-dropdown .dropdown-toggle::after {
+    display: none;
+}
+
+.account-dropdown .dropdown-menu {
+    right: 5px !important;
+    left: initial !important;
+    margin-top: -6px;
+    min-width: initial;
+}
+
+.card-header {
+    font-size: 0.9em;
+}

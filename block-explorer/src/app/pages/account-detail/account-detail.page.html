@@ -1,0 +1,17 @@
+<h4>Account information</h4>
+<table class="table">
+    <tr>
+        <th width="150">Address</th>
+        <td>{{address}}</td>
+    </tr>
+    <tr>
+        <th>Balance</th>
+        <td>{{getBalance()}}</td>
+    </tr>
+    <tr>
+        <th>Transactions</th>
+        <td>
+            <a [routerLink]="['transactions']">{{accountTransactions.length}}</a>
+        </td>
+    </tr>
+</table>

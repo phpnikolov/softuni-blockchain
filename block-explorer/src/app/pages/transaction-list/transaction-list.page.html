@@ -1,0 +1,37 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">TxHash</th>
+            <th scope="col">Block</th>
+            <th scope="col">Timestamp</th>
+            <th scope="col">From</th>
+            <th scope="col">To</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Status</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let tx of transactions" [ngClass]="{'text-muted' : !tx.blockHash}" [routerLink]="['/transactions', tx.transactionHash]">
+            <td>
+                <a title="{{tx.transactionHash}}" *ngIf="tx.transactionHash" [routerLink]="['/transactions', tx.transactionHash]">{{tx.transactionHash | slice:0:12}}...</a>
+            </td>
+            <td>
+                <a title="{{tx.blockHash}}" *ngIf="tx.blockHash" [routerLink]="['/blocks', tx.blockHash]">{{tx.blockHash | slice:0:12}}...</a>
+            </td>
+            <td>{{tx.timeCreated | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+            <td>
+                <a title="{{tx.from}}" *ngIf="tx.from" [routerLink]="['/accounts', tx.from]">{{tx.from | slice:0:12}}...</a>
+            </td>
+            <td>
+                <a title="{{tx.to}}" *ngIf="tx.to" [routerLink]="['/accounts', tx.to]">{{tx.to | slice:0:12}}...</a>
+            </td>
+            <td>{{tx.amount}}</td>
+            <td>
+                <span *ngIf="tx.blockHash" class="badge badge-success">confirmed</span>
+                <span *ngIf="!tx.blockHash" class="badge badge-secondary">pending</span>
+            </td>
+        </tr>
+
+    </tbody>
+</table>

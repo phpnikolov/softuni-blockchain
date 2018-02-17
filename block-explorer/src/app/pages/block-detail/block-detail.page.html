@@ -1,0 +1,33 @@
+<h4>Block information</h4>
+<table class="table" *ngIf="block">
+    <tr>
+        <th width="150">Height</th>
+        <td>{{block.index}}</td>
+    </tr>
+    <tr>
+        <th>Block Hash</th>
+        <td>{{block.blockHash}}</td>
+    </tr>
+    <tr>
+        <th>Parent Hash</th>
+        <td>
+            <a *ngIf="block.index > 0" [routerLink]="['/blocks', block.prevBlockHash]">{{block.prevBlockHash}}</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Difficulty</th>
+        <td>{{block.difficulty}}</td>
+    </tr>
+    <tr>
+        <th>Timestamp</th>
+        <td>{{block.timeCreated | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+    </tr>
+    <tr>
+        <th>Nonce</th>
+        <td>{{block.nonce}}</td>
+    </tr>
+    <tr>
+        <th>Transactions</th>
+        <td><a [routerLink]="['/blocks', block.blockHash, 'transactions']">{{block.transactions.length}}</a></td>
+    </tr>
+</table>
