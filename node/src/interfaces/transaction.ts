@@ -1,10 +1,8 @@
-import { BigInteger } from 'big-integer';
-
 export interface Transaction {
     transactionHash?: string,
     from?: string,
     to: string,
-    amount: BigInteger,
+    amount: string,
 
     senderPubKey?: string,
     senderSignature?: string,

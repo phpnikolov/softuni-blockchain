@@ -30,7 +30,7 @@ export class BlockchainController {
         // donate 100,000 SoftUni to Faucet address
         let txFaucet: Transaction = {
             to: '7c2fda3a3089042b458fe85da748914ea33e2497',
-            amount: this.util.toUni(100000, this.util.units.softuni),
+            amount: this.util.toUni(100000, this.util.units.softuni).toString(10),
             timeCreated: (new Date()).getTime()
         }
 
@@ -173,7 +173,8 @@ export class BlockchainController {
     }
 
     private validateTrasaction(trx: Transaction, isBlockReward: boolean = false): void {
-        if (trx.amount.lesserOrEquals(0)) {
+        let trxAmount:BigInteger = bigInt(trx.amount);
+        if (trxAmount.lesserOrEquals(0)) {
             throw 'Balance must be greater than 0.';
         }
         if (trx.transactionHash != this.blockchainService.calculateTransactionHash(trx)) {
@@ -188,7 +189,7 @@ export class BlockchainController {
             if (trx.from) {
                 throw 'From must be empty.';
             }
-            if (trx.amount.notEquals(this.minerReward)) {
+            if (trxAmount.notEquals(this.minerReward)) {
                 throw 'Invalid miner reward.';
             }
         }
