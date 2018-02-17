@@ -29,13 +29,27 @@ tsc
 npm start
 ```
 
+Url: http://localhost:4220/
+
+## Run Block Explorer
+
+```
+cd ./block-explorer
+npm install
+npm start
+```
+
+Url: http://localhost:4221/
+
 ## Run Wallet
 
 ```
 cd ./wallet
 npm install
-ng serve
+npm start
 ```
+
+Url: http://localhost:4222/
 
 ## Node API Endpoints
 

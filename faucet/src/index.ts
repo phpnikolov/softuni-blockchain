@@ -46,7 +46,7 @@ new class extends CliService {
     public init() {
 
         this.quetion('Set Node hostname', 'localhost').then((nodeHostname: string) => {
-            let port: number = 4201;
+            let port: number = 4222;
             app.listen(port, () => {
                 fc = new FaucetController(nodeHostname);
                 this.rl.close();
