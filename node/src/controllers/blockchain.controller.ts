@@ -3,15 +3,18 @@ import { Block } from "../interfaces/block";
 import { Transaction } from "../interfaces/transaction";
 import { BlockchainService } from "../services/blockchain.service";
 import { CryptoService } from "../services/crypto.service";
+import { BigInteger } from 'big-integer';
+import * as bigInt from 'big-integer';
 
 
 export class BlockchainController {
-    private cryptoService:CryptoService = new CryptoService;
-    private blockchainService:BlockchainService = new BlockchainService;
+    private cryptoService: CryptoService = new CryptoService;
+    private blockchainService: BlockchainService = new BlockchainService;
+    private util = this.blockchainService.util;
 
     private blockchain: Block[] = [];
     public difficulty: number = 4;
-    public minerReward: number = 5;
+    public minerReward: BigInteger = this.util.toUni(5, this.util.units.softuni); // 5 SoftUni
     private pendingTrxs: Transaction[] = [];
 
 
@@ -24,10 +27,10 @@ export class BlockchainController {
             return;
         }
 
-        // donate 100,000,000 coins to Faucet address
-        let txFaucet:Transaction = {
+        // donate 100,000 SoftUni to Faucet address
+        let txFaucet: Transaction = {
             to: '7c2fda3a3089042b458fe85da748914ea33e2497',
-            amount: 100000000,
+            amount: this.util.toUni(100000, this.util.units.softuni),
             timeCreated: (new Date()).getTime()
         }
 
@@ -96,7 +99,7 @@ export class BlockchainController {
     public addPendingTransaction(trx: Transaction): void {
         // check if exists in pending transactions
         if (this.getPendingTransaction(trx.transactionHash)) {
-             throw 'The transactions is already added.';
+            throw 'The transactions is already added.';
         }
         // pending transactions should not have blockHash
         trx.blockHash = undefined;
@@ -110,10 +113,10 @@ export class BlockchainController {
     }
 
     public getPendingTransaction(hash: string): Transaction {
-        return _.find(this.pendingTrxs, (trx: Transaction) => { return trx.transactionHash == hash; }); 
+        return _.find(this.pendingTrxs, (trx: Transaction) => { return trx.transactionHash == hash; });
     }
 
-    public getConfirmedTransactions() : Transaction[] {
+    public getConfirmedTransactions(): Transaction[] {
         return _.flatten(_.map(this.blockchain, 'transactions'));
     }
 
@@ -165,14 +168,13 @@ export class BlockchainController {
         if (this.blockchainService.calculateHashDifficulty(newBlock.blockHash) < this.difficulty) {
             throw 'Block hash have less difficulty.';
         }
-        
+
 
     }
 
     private validateTrasaction(trx: Transaction, isBlockReward: boolean = false): void {
-        // don't use <= 0 instead, beacause non numbers (NaN, false, null, string, etc.) will be valid!
-        if ((trx.amount > 0) === false) {
-            throw 'Balance must be positive number.';
+        if (trx.amount.lesserOrEquals(0)) {
+            throw 'Balance must be greater than 0.';
         }
         if (trx.transactionHash != this.blockchainService.calculateTransactionHash(trx)) {
             throw 'Invalid transaction hash.';
@@ -186,7 +188,7 @@ export class BlockchainController {
             if (trx.from) {
                 throw 'From must be empty.';
             }
-            if (trx.amount != this.minerReward) {
+            if (trx.amount.notEquals(this.minerReward)) {
                 throw 'Invalid miner reward.';
             }
         }
@@ -201,7 +203,8 @@ export class BlockchainController {
                 throw 'Invalid signature.';
             }
             // Check if sender have enough money
-            if (this.getBalance(trx.from) < trx.amount) {
+            let senderBalance:BigInteger = this.blockchainService.calculateBalance(trx.from, this.getConfirmedTransactions(), this.getPendingTransactions());
+            if (senderBalance.lesser(trx.amount)) {
                 throw 'Not enough balance.';
             }
         }
@@ -210,43 +213,9 @@ export class BlockchainController {
     /** 
      * Removes pending transactions already included a block
     */
-    private filterPendingTransactions():void {
+    private filterPendingTransactions(): void {
         _.remove(this.pendingTrxs, (trx: Transaction) => {
             return this.getConfirmedTransaction(trx.transactionHash);
         });
     }
-
-    private getBalance(address: string): number {
-        let balance = 0;
-
-         let confirmedTxs: Transaction[] = this.getConfirmedTransactions();
-
-         for (let i = 0; i < confirmedTxs.length; i++) {
-             const trx = confirmedTxs[i];
- 
-             if (trx.to == address) {
-                 // input transaction, add amount to balance 
-                 balance += trx.amount;
-             }
-             else if (trx.from == address) {
-                 // outgoing transaction, subtract amount from balance
-                 balance -= trx.amount
-             }
-         }
-
-
-        let pendingTxs: Transaction[] = this.getPendingTransactions();
-
-        for (let i = 0; i < pendingTxs.length; i++) {
-            const trx = pendingTxs[i];
-
-            if (trx.from == address) {
-                // outgoing transaction, subtract amount from balance
-                balance -= trx.amount
-            }
-        }
-
-        return balance;
-    }
-
 }

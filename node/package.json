@@ -8,6 +8,7 @@
     "author": "Vasil Nikolov",
     "license": "ISC",
     "dependencies": {
+        "big-integer": "^1.6.26",
         "body-parser": "^1.18.2",
         "cors": "^2.8.4",
         "crypto-js": "^3.1.9-1",

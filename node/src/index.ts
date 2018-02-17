@@ -3,6 +3,7 @@ import * as bodyParser from "body-parser";
 import * as expressValidator from "express-validator/check";
 import * as cors from "cors";
 import * as _ from "lodash";
+import * as bigInt from 'big-integer';
 import { Transaction } from "./interfaces/transaction";
 
 import { CliService } from "./services/cli.service";
@@ -107,7 +108,7 @@ app.post('/transactions/pending', [
         transactionHash: req.body['transactionHash'],
         from: req.body['from'],
         to: req.body['to'],
-        amount: Number(req.body['amount']),
+        amount: bigInt(req.body['amount']),
         senderPubKey: req.body['senderPubKey'],
         senderSignature: req.body['senderSignature'],
         timeCreated: Number(req.body['timeCreated']),
