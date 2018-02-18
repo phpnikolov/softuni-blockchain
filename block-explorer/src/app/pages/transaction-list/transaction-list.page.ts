@@ -11,7 +11,7 @@ import { BlockchainService } from '../../services/blockchain.service';
   styleUrls: ['./transaction-list.page.css']
 })
 export class TransactionListPage implements OnInit {
-
+  private autoLoadingId;
   private transactions: Transaction[] = [];
   constructor(
     private route: ActivatedRoute,
@@ -31,12 +31,23 @@ export class TransactionListPage implements OnInit {
         apiCall = `address/${params.address}/transactions`; // address txs
       }
 
-      this.loadBlocks(apiCall);
+      this.loadTransactions(apiCall);
+
+      // relaod transactions every 5 sec
+      this.autoLoadingId = setInterval(() => {
+        this.loadTransactions(apiCall);
+      }, 5000);
     });
   }
 
+  ngOnDestroy() {
+    if (this.autoLoadingId) {
+      clearInterval(this.autoLoadingId);
+    }
+  }
 
-  private loadBlocks(apiCall: string): void {
+
+  private loadTransactions(apiCall: string): void {
     // get confirmed+pending
     this.httpClient.request('GET', `http://127.0.01:5555/${apiCall}`, {
       observe: 'body',
@@ -44,7 +55,8 @@ export class TransactionListPage implements OnInit {
     }).subscribe(
       (data: Transaction[]) => {
         this.transactions = _.orderBy(data, ['timeCreated'], ['desc']);
-      });
+      }
+    );
   }
 
 }

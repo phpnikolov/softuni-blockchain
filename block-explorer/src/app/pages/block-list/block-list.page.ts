@@ -10,7 +10,7 @@ import { environment } from '../../../environments/environment';
   styleUrls: ['./block-list.page.css']
 })
 export class BlockListPage implements OnInit {
-
+  private autoLoadingId;
   public readonly env = environment;
   private blocks:Block[] = [];
   constructor(
@@ -19,6 +19,17 @@ export class BlockListPage implements OnInit {
 
   ngOnInit() {
     this.loadBlocks();
+
+    // relaod blocks every 5 sec
+    this.autoLoadingId = setInterval(() => {
+      this.loadBlocks();
+    }, 5000);
+  }
+
+  ngOnDestroy() {
+    if (this.autoLoadingId) {
+      clearInterval(this.autoLoadingId);
+    }
   }
 
 

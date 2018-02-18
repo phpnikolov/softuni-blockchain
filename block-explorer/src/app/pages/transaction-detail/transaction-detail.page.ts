@@ -11,6 +11,8 @@ import { environment } from '../../../environments/environment';
 })
 export class TransactionDetailPage implements OnInit {
 
+  private txHash:string;
+  private autoLoadingId;
   private readonly env = environment;
   private transaction:Transaction;
   constructor(
@@ -20,15 +22,26 @@ export class TransactionDetailPage implements OnInit {
 
   ngOnInit() {
     this.route.params.subscribe(params => {
-      this.loadTransaction(params.txHash);
+      this.txHash = params.txHash;
+      this.loadTransaction();
     });
     
+    // relaod transactions every 5 sec
+    this.autoLoadingId = setInterval(() => {
+      this.loadTransaction();
+    }, 5000);
+  }
+
+  ngOnDestroy() {
+    if (this.autoLoadingId) {
+      clearInterval(this.autoLoadingId);
+    }
   }
 
 
-  private loadTransaction(transactionHash:string): void {
+  private loadTransaction(): void {
 
-    this.httpClient.request('GET', `${this.env.nodeUrl}/transactions/${transactionHash}`, {
+    this.httpClient.request('GET', `${this.env.nodeUrl}/transactions/${this.txHash}`, {
       observe: 'body',
       responseType: 'json'
     }).subscribe(

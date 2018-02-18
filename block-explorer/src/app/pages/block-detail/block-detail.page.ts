@@ -11,29 +11,43 @@ import { environment } from '../../../environments/environment';
 })
 export class BlockDetailPage implements OnInit {
   public readonly env = environment;
+  private blockHash: string;
+  private autoLoadingId;
 
-  private block:Block;
+  private block: Block;
   constructor(
     private route: ActivatedRoute,
-    private httpClient:HttpClient
+    private httpClient: HttpClient
   ) { }
 
   ngOnInit() {
     this.route.params.subscribe(params => {
-      this.loadBlock(params.blockHash);
+      this.blockHash = params.blockHash;
+      this.loadBlock();
     });
+
+    // relaod block every 5 sec
+    this.autoLoadingId = setInterval(() => {
+      this.loadBlock();
+    }, 5000);
   }
 
+  ngOnDestroy() {
+    if (this.autoLoadingId) {
+      clearInterval(this.autoLoadingId);
+    }
+  }
 
-  private loadBlock(blockHash:string): void {
+  private loadBlock(): void {
 
-    this.httpClient.request('GET', `${this.env.nodeUrl}/blocks/${blockHash}`, {
+    this.httpClient.request('GET', `${this.env.nodeUrl}/blocks/${this.blockHash}`, {
       observe: 'body',
       responseType: 'json'
     }).subscribe(
-      (data:Block) => {
+      (data: Block) => {
         this.block = data;
-      });
+      }
+    );
   }
 
 }

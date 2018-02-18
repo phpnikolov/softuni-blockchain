@@ -13,6 +13,7 @@ import { environment } from '../../../environments/environment';
 })
 export class AccountDetailPage implements OnInit {
   public address: string;
+  private autoLoadingId;
   private accountTransactions: Transaction[] = [];
   public readonly env = environment;
 
@@ -28,6 +29,17 @@ export class AccountDetailPage implements OnInit {
       this.address = params['address'];
       this.loadTransactions();
     });
+
+    // relaod account transactions every 5 sec
+    this.autoLoadingId = setInterval(() => {
+      this.loadTransactions();
+    }, 5000);
+  }
+
+  ngOnDestroy() {
+    if (this.autoLoadingId) {
+      clearInterval(this.autoLoadingId);
+    }
   }
 
 
