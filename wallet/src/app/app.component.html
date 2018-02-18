@@ -24,7 +24,7 @@
             </div>
         </div>
         <div class="card-body">
-            <h5 class="card-title">Balance: <span class="text-success">{{blockchain.uni2SoftUni(getAccountBalance(selectedAccount)) | number:'1.0-5'}}</span> SoftUni</h5>
+            <h5 class="card-title">Balance: <span class="text-success">{{blockchain.uni2SoftUni(getAccountBalance(selectedAccount)) | number:'1.0-5'}} SoftUni</span></h5>
             <hr>
             <form (ngSubmit)="sendTransaction(selectedAccount)" [formGroup]="fg">
                 <div class="form-group">

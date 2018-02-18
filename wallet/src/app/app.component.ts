@@ -3,7 +3,6 @@ import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
 import * as _ from "lodash";
-import * as elliptic from "elliptic";
 import * as CryptoJS from "crypto-js";
 
 import { StorageService } from './services/storage.service';
@@ -65,8 +64,13 @@ export class AppComponent {
     let publicKey = this.crypto.getPublicKey(privateKey);
     let address = this.crypto.getAddress(publicKey);
 
+    let pwd = prompt("Please enter password:");
+    if (pwd == null) {
+      return; // cancel
+    }
+
     let account: CryptoAccount = {
-      privateKey: privateKey,
+      privateKey: (pwd.length > 0 ? CryptoJS.AES.encrypt(privateKey, pwd).toString() : privateKey), // encrypted private key if password is set
       publicKey: publicKey,
       address: address,
       name: `Account ` + (this.accounts.length + 1)
@@ -91,7 +95,7 @@ export class AppComponent {
   }
 
   public showPrivateKey(account: CryptoAccount): void {
-    alert(account.privateKey);
+    alert(this.getPrivateKey(account));
   }
 
   public renameAccount(account: CryptoAccount): void {
@@ -113,6 +117,28 @@ export class AppComponent {
     }
   }
 
+  private getPrivateKey(account: CryptoAccount): string {
+    let pwd = prompt("Please enter password:");
+    if (pwd == null) {
+      return; // cancel
+    }
+
+    if (pwd) {
+      try {
+        return CryptoJS.AES.decrypt(account.privateKey, pwd).toString(CryptoJS.enc.Utf8);
+      }
+      catch (ex) {
+        alert('Invalid password');
+        return;
+      }
+      
+    }
+    else {
+      // no password
+      return account.privateKey;
+    }
+  }
+
   public sendTransaction(account: CryptoAccount) {
     let trx: Transaction = {
       from: account.address,
@@ -126,7 +152,7 @@ export class AppComponent {
     trx.transactionHash = this.blockchain.calculateTransactionHash(trx);
 
     // sign transaction hash
-    trx.senderSignature = this.crypto.getSignature(trx.transactionHash, account.privateKey);
+    trx.senderSignature = this.crypto.getSignature(trx.transactionHash, this.getPrivateKey(account));
 
     if (confirm('Confirm sending: ' + JSON.stringify(trx, null, 2))) {
       this.trxAmount = undefined;
