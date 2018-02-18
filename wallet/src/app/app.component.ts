@@ -59,10 +59,18 @@ export class AppComponent {
   }
 
 
-  public createAccount() {
-    let privateKey = this.crypto.generatePrivateKey();
+  public createAccount(privateKey?: string): void {
+    if (!privateKey) {
+      privateKey = this.crypto.generatePrivateKey();
+    }
+
     let publicKey = this.crypto.getPublicKey(privateKey);
     let address = this.crypto.getAddress(publicKey);
+
+    let accountName = prompt("Account name:", 'Account ' + (this.accounts.length + 1));
+    if (accountName == null) {
+      return; // cancel
+    }
 
     let pwd = prompt("Please enter password:");
     if (pwd == null) {
@@ -73,12 +81,19 @@ export class AppComponent {
       privateKey: (pwd.length > 0 ? CryptoJS.AES.encrypt(privateKey, pwd).toString() : privateKey), // encrypted private key if password is set
       publicKey: publicKey,
       address: address,
-      name: `Account ` + (this.accounts.length + 1)
+      name: accountName
     };
 
     let idx = this.accounts.push(account) - 1;
     this.storeAccounts();
     this.useAccount(idx);
+  }
+
+  public importAccount(): void {
+    let privateKey = prompt("Enter private key:");
+    if (privateKey != null) {
+      this.createAccount(privateKey);
+    }
   }
 
   private storeAccounts(): void {
@@ -95,7 +110,11 @@ export class AppComponent {
   }
 
   public showPrivateKey(account: CryptoAccount): void {
-    alert(this.getPrivateKey(account));
+    let privateKey = this.unlockPrivateKey(account.privateKey);
+    if (privateKey) {
+      alert(privateKey);
+    }
+
   }
 
   public renameAccount(account: CryptoAccount): void {
@@ -117,26 +136,32 @@ export class AppComponent {
     }
   }
 
-  private getPrivateKey(account: CryptoAccount): string {
+  private unlockPrivateKey(privateKey: string): string {
     let pwd = prompt("Please enter password:");
     if (pwd == null) {
       return; // cancel
     }
 
-    if (pwd) {
-      try {
-        return CryptoJS.AES.decrypt(account.privateKey, pwd).toString(CryptoJS.enc.Utf8);
-      }
-      catch (ex) {
-        alert('Invalid password');
-        return;
-      }
-      
+    let decryptedPrivateKey: string;
+
+    if (pwd.length === 0) {
+      // no password
+      decryptedPrivateKey = privateKey;
     }
     else {
-      // no password
-      return account.privateKey;
+      try {
+        decryptedPrivateKey = CryptoJS.AES.decrypt(privateKey, pwd).toString(CryptoJS.enc.Utf8);
+      }
+      catch (ex) {
+      }
     }
+
+
+    if (!decryptedPrivateKey || decryptedPrivateKey.length != 64) {
+      alert('Wrong password!' + decryptedPrivateKey);
+    }
+
+    return decryptedPrivateKey;
   }
 
   public sendTransaction(account: CryptoAccount) {
@@ -152,7 +177,11 @@ export class AppComponent {
     trx.transactionHash = this.blockchain.calculateTransactionHash(trx);
 
     // sign transaction hash
-    trx.senderSignature = this.crypto.getSignature(trx.transactionHash, this.getPrivateKey(account));
+    let privateKey = this.unlockPrivateKey(account.privateKey);
+    if (!privateKey) {
+      return; // cancel
+    }
+    trx.senderSignature = this.crypto.getSignature(trx.transactionHash, privateKey);
 
     if (confirm('Confirm sending: ' + JSON.stringify(trx, null, 2))) {
       this.trxAmount = undefined;

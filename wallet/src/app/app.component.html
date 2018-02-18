@@ -1,6 +1,12 @@
 <div class="container">
-
-    <button type="button" class="btn btn-info btn-block mt-2" (click)="createAccount()">Create New Account</button>
+    <div class="my-3 row">
+        <div class="col-sm">
+            <button type="button" class="btn btn-primary btn-block" (click)="createAccount()">Create New Account</button>
+        </div>
+        <div class="col-sm">
+            <button type="button" class="btn btn-info btn-block" (click)="importAccount()">Import Account</button>
+        </div>
+    </div>
 
     <div class="form-group mt-2" *ngIf="accounts.length > 0">
         <label for="account-select">Accounts:</label>
@@ -8,8 +14,6 @@
           <option *ngFor="let account of accounts; let i = index" [ngValue]="account">{{account.name}}</option>
         </select>
     </div>
-
-
 
     <div class="card mt-3" *ngIf="selectedAccount">
         <div class="card-header">
