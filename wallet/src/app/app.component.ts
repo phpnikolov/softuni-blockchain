@@ -47,7 +47,8 @@ export class AppComponent {
     private crypto: CryptoService,
     private httpClient: HttpClient,
   ) {
-    this.accounts = storage.getVal('accounts') || [];
+    this.storage.useNamespace('softuni-wallet');
+    this.accounts = this.storage.getVal('accounts') || [];
 
     this.useAccount(0);
     this.syncAllAccountsTrxs();
@@ -67,13 +68,13 @@ export class AppComponent {
     let publicKey = this.crypto.getPublicKey(privateKey);
     let address = this.crypto.getAddress(publicKey);
 
-    let accountName = prompt("Account name:", 'Account ' + (this.accounts.length + 1));
-    if (accountName == null) {
+    let pwd = prompt("Enter password to encrypt the private key:");
+    if (pwd == null) {
       return; // cancel
     }
 
-    let pwd = prompt("Please enter password:");
-    if (pwd == null) {
+    let accountName = prompt("Account name:", 'Account ' + (this.accounts.length + 1));
+    if (accountName == null) {
       return; // cancel
     }
 
@@ -118,7 +119,7 @@ export class AppComponent {
   }
 
   public renameAccount(account: CryptoAccount): void {
-    let accountName = prompt("Please enter name:", account.name);
+    let accountName = prompt("Enter name:", account.name);
     if (accountName) {
       account.name = accountName;
       this.storeAccounts();
@@ -137,7 +138,7 @@ export class AppComponent {
   }
 
   private unlockPrivateKey(privateKey: string): string {
-    let pwd = prompt("Please enter password:");
+    let pwd = prompt("Enter password to decrypt the private key:");
     if (pwd == null) {
       return; // cancel
     }
@@ -158,7 +159,7 @@ export class AppComponent {
 
 
     if (!decryptedPrivateKey || decryptedPrivateKey.length != 64) {
-      alert('Wrong password!' + decryptedPrivateKey);
+      alert('Wrong password!');
     }
 
     return decryptedPrivateKey;
