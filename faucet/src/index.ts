@@ -6,6 +6,8 @@ import * as _ from "lodash";
 import { CliService } from "./services/cli.service";
 import { FaucetController } from "./controllers/faucet.controller";
 
+// mapping address => timestamp (last)
+let addrRequest: { [address: string]: number } = {}
 
 let fc: FaucetController;
 
@@ -17,17 +19,30 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
     extended: true
 }));
 
-// Create pending transaction
+
 app.post('/send', [
     expressValidator.check('to', "'to' is required parameter").exists(),
 
 ], (req, res) => {
     let errors = expressValidator.validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ error: _.first(_.map(errors.array(), 'msg')) });
+        return res.redirect('/?&--err=' + encodeURI(_.first(_.map(errors.array(), 'msg'))));
     }
 
-    fc.sendToAddress(req.body['to']).then((txHash: string) => {
+
+    let addr = req.body['to'];
+
+    let unixtimestamp = (new Date()).getTime(); // milliseconds 
+    let minTimeBetweenRequests = 60 * 60 * 1000; // 1 hour in milliseconds
+
+    if (addrRequest[addr] && addrRequest[addr] + minTimeBetweenRequests > unixtimestamp) {
+        let timeLeft = Math.ceil((addrRequest[addr] + minTimeBetweenRequests - unixtimestamp) / 60000); // minutes
+        return res.redirect('/?&--err=' + encodeURI(`You can receive more SoftUni after ${timeLeft} minutes.`));
+    }
+
+    addrRequest[addr] = unixtimestamp;
+
+    fc.sendToAddress(addr).then((txHash: string) => {
         res.redirect('/?&--msg=' + encodeURI('Transaction hash: ' + txHash));
 
     }, (errMsg: string) => {
@@ -35,9 +50,8 @@ app.post('/send', [
     })
 });
 
-// Returns pending transactions for specified :address
-app.get('/', (req, res) => {
 
+app.get('/', (req, res) => {
     return res.sendFile(path.resolve('public/index.html'));
 });
 
