@@ -3,6 +3,7 @@ import { Transaction } from '../../interfaces/transaction';
 import { HttpClient } from '@angular/common/http';
 import * as _ from 'lodash';
 import { ActivatedRoute } from '@angular/router';
+import { BlockchainService } from '../../services/blockchain.service';
 
 
 @Component({
@@ -14,7 +15,8 @@ export class TransactionListPage implements OnInit {
   private transactions: Transaction[] = [];
   constructor(
     private route: ActivatedRoute,
-    private httpClient: HttpClient
+    private httpClient: HttpClient,
+    public blockchain: BlockchainService
   ) { }
 
   ngOnInit() {

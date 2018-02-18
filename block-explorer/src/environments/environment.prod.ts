@@ -1,3 +1,4 @@
 export const environment = {
-  production: true
+  production: true,
+  nodeUrl: 'http://localhost:5555',
 };

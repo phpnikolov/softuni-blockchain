@@ -2,7 +2,7 @@ export interface Transaction {
     transactionHash?:string,
     from?:string,
     to:string,
-    amount:number,
+    amount:string,
 
     senderPubKey?: string,
     senderSignature?: string,

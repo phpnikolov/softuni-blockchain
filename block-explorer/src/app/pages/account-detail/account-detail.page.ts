@@ -2,6 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Transaction } from '../../interfaces/transaction';
 import { HttpClient } from '@angular/common/http';
+import { BlockchainService } from '../../services/blockchain.service';
+import * as _ from "lodash";
+import { BigInteger } from 'big-integer';
+import { environment } from '../../../environments/environment';
 
 @Component({
   templateUrl: './account-detail.page.html',
@@ -10,11 +14,12 @@ import { HttpClient } from '@angular/common/http';
 export class AccountDetailPage implements OnInit {
   public address: string;
   private accountTransactions: Transaction[] = [];
-
+  public readonly env = environment;
 
   constructor(
     private route: ActivatedRoute,
-    private httpClient:HttpClient
+    private httpClient: HttpClient,
+    public blockchain: BlockchainService
   ) { }
 
   ngOnInit() {
@@ -28,7 +33,7 @@ export class AccountDetailPage implements OnInit {
 
   private loadTransactions(): void {
 
-    this.httpClient.request('GET', `http://127.0.01:5555/address/${this.address}/transactions`, {
+    this.httpClient.request('GET', `${this.env.nodeUrl}/address/${this.address}/transactions`, {
       observe: 'body',
       responseType: 'json'
     }).subscribe(
@@ -37,22 +42,10 @@ export class AccountDetailPage implements OnInit {
       });
   }
 
-  public getBalance():number {
-    let balance: number = 0;
+  public getBalance(): BigInteger {
+    let confirmedTxs = _.filter(this.accountTransactions, 'blockHash')
+    let pendingTxs = _.filter(this.accountTransactions, (tx: Transaction) => { !tx.blockHash });
 
-    for (let i = 0; i < this.accountTransactions.length; i++) {
-      const tx = this.accountTransactions[i];
-      if (tx.to == this.address && tx.blockHash) {
-        // input transaction, add amount to balance (only mined transactions)
-        balance += tx.amount;
-      }
-      else if (tx.from == this.address) {
-        // outgoing transaction, subtract amount from balance
-        balance -= tx.amount
-      }
-    }
-
-    return balance;
+    return this.blockchain.calculateBalance(this.address, confirmedTxs, pendingTxs); // in unis
   }
-
 }

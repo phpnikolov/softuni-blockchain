@@ -10,11 +10,11 @@ import * as bigInt from 'big-integer';
 export class BlockchainController {
     private cryptoService: CryptoService = new CryptoService;
     private blockchainService: BlockchainService = new BlockchainService;
-    private util = this.blockchainService.util;
+
 
     private blockchain: Block[] = [];
     public difficulty: number = 4;
-    public minerReward: BigInteger = this.util.toUni(5, this.util.units.softuni); // 5 SoftUni
+    public minerReward: string = this.blockchainService.softUni2Uni(5); // 5 SoftUni
     private pendingTrxs: Transaction[] = [];
 
 
@@ -30,7 +30,7 @@ export class BlockchainController {
         // donate 100,000 SoftUni to Faucet address
         let txFaucet: Transaction = {
             to: '7c2fda3a3089042b458fe85da748914ea33e2497',
-            amount: this.util.toUni(100000, this.util.units.softuni).toString(10),
+            amount: this.blockchainService.softUni2Uni(100000),
             timeCreated: (new Date()).getTime()
         }
 
@@ -143,15 +143,20 @@ export class BlockchainController {
         // validate transactions
         for (let i = 0; i < newBlock.transactions.length; i++) {
             const trx: Transaction = newBlock.transactions[i];
+
             // first transaction must be the miner reward
             let isBlockReward: boolean = (i === 0);
 
-
             try {
-                this.validateTrasaction(trx, isBlockReward);
+                if (_.find(newBlock.transactions, ['transactionHash', trx.transactionHash]) > 1) {
+                    throw 'Duplicate transaction hash.'
+                }
+
                 if (trx.blockHash != newBlock.blockHash) {
                     throw 'Incorect block hash.';
                 }
+
+                this.validateTrasaction(trx, isBlockReward);
             }
             catch (ex) {
                 throw `Invalid transaction '${trx.transactionHash}': ` + ex;

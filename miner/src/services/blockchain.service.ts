@@ -9,21 +9,17 @@ export class BlockchainService {
     public calculatekBlockHash(prevBlockHash: string, transactions: Transaction[], nonce): string {
         // sort transaction by create timne
         let trxsSorted = _.sortBy(transactions, ['timeCreated']);
-        let trxsHashes: string[] = _.map(trxsSorted, 'transactionHash');;
-        
-        return CryptoJS.SHA256(JSON.stringify([
-            prevBlockHash,
-            trxsHashes,
-            nonce
-        ])).toString();
+        let trxsHashes: string[] = _.map(trxsSorted, 'transactionHash');
+
+        return CryptoJS.SHA256(JSON.stringify([prevBlockHash, trxsHashes, nonce])).toString();
     }
 
 
-    public calculateTransactionHash(trx:Transaction): string {
+    public calculateTransactionHash(trx: Transaction): string {
         return CryptoJS.SHA256(JSON.stringify([trx.from, trx.to, trx.amount, trx.timeCreated])).toString();
     }
 
-    public calculateBalance(address:string, confirmedTxs:Transaction[], pendingTxs:Transaction[]):BigInteger {
+    public calculateBalance(address: string, confirmedTxs: Transaction[], pendingTxs: Transaction[]): BigInteger {
         let balance: BigInteger = bigInt(0);
 
         for (let i = 0; i < confirmedTxs.length; i++) {
@@ -31,11 +27,11 @@ export class BlockchainService {
 
             if (trx.to == address) {
                 // incoming transaction, add amount to balance 
-                balance.add(trx.amount);
+                balance = balance.add(trx.amount);
             }
             else if (trx.from == address) {
                 // outgoing transaction, subtract amount from balance
-                balance.minus(trx.amount);
+                balance = balance.minus(trx.amount);
             }
         }
 
@@ -44,7 +40,7 @@ export class BlockchainService {
 
             if (trx.from == address) {
                 // penging outgoing transaction, subtract amount from balance
-                balance.minus(trx.amount);
+                balance = balance.minus(trx.amount);
             }
         }
 
@@ -55,40 +51,25 @@ export class BlockchainService {
      * Calculate how many leading zeros `hash` have
      * @param hash 
      */
-    public calculateHashDifficulty(hash: string) {
-        let difficulty = 0;
+    public calculateHashDifficulty(hash: string):number {
         for (let i = 0; i < hash.length; i++) {
-            if (hash[i] == '0') {
-                difficulty++;
-            }
-            else {
-                break;
-            }
+            if (hash[i] !== '0') return i; 
         }
-        return difficulty;
     }
 
+    // Uni - the smallest unit
+    // SoftUni - the smallest unit (10^18 uni)
+    public uni2SoftUni(value: string | BigInteger, power: number): number {
+        let intPart:string = value.toString().slice(0,-18);
+        let decPart:string = _.padStart(value.toString().slice(-18), 18, '0');
 
-    public util = {
-        units: {
-            softuni: 18, // SoftUni - the smallest unit (10^18)
-            muni: 10, // mUni - the smallest unit (10^10)
-            uni: 0 // Uni - the smallest unit (10^0)
-        },
-        fromUni: (value:number|BigInteger, power:number):BigInteger => {
-            if (typeof value === 'number') {
-                value = bigInt(value);
-            }
+        return parseFloat(intPart + '.' + decPart);
+    }
 
-            return value.divide(Math.pow(10,power));
-        },
+    public softUni2Uni(value: number): string {
+        let intPart = Math.floor(value);
+        let decPart = _.padEnd((value + '').split('.')[1], 18, '0');
 
-        toUni: (value:number|BigInteger, power:number) => {
-            if (typeof value === 'number') {
-                value = bigInt(value);
-            }
-
-            return value.multiply(Math.pow(10,power));
-        }
+        return _.trimStart(intPart + decPart, '0');
     }
 }

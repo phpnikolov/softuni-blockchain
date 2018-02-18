@@ -30,7 +30,7 @@ export class FaucetController {
         let trx: Transaction = {
             from: this.getAddress(),
             to: address,
-            amount: 1,
+            amount: this.blockchain.softUni2Uni(1),
             timeCreated: (new Date()).getTime(),
         };
 

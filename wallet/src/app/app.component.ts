@@ -13,7 +13,10 @@ import { CryptoAccount } from './interfaces/crypto-account';
 
 import { Transaction } from './interfaces/transaction';
 import { CryptoService } from './services/crypto.service';
+import { BigInteger } from 'big-integer';
+import * as bigInt from 'big-integer';
 
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -21,7 +24,7 @@ import { CryptoService } from './services/crypto.service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-
+  public readonly env = environment;
   public accounts: CryptoAccount[];
   public accountsTrxs: { string: Transaction[] }[] = [];
   public selectedAccount: CryptoAccount;
@@ -41,7 +44,7 @@ export class AppComponent {
 
   public constructor(
     private storage: StorageService,
-    private blockchain: BlockchainService,
+    public blockchain: BlockchainService,
     private crypto: CryptoService,
     private httpClient: HttpClient,
   ) {
@@ -74,7 +77,7 @@ export class AppComponent {
     this.useAccount(idx);
   }
 
-  private storeAccounts():void {
+  private storeAccounts(): void {
     this.storage.setVal('accounts', this.accounts);
   }
 
@@ -114,13 +117,13 @@ export class AppComponent {
     let trx: Transaction = {
       from: account.address,
       to: this.trxRecipient,
-      amount: this.trxAmount,
+      amount: this.blockchain.softUni2Uni(this.trxAmount),
       timeCreated: (new Date()).getTime(),
       senderPubKey: account.publicKey
     };
 
     // create transaction hash
-    trx.transactionHash = BlockchainService.calculateTransactionHash(trx);
+    trx.transactionHash = this.blockchain.calculateTransactionHash(trx);
 
     // sign transaction hash
     trx.senderSignature = this.crypto.getSignature(trx.transactionHash, account.privateKey);
@@ -129,7 +132,7 @@ export class AppComponent {
       this.trxAmount = undefined;
       this.trxRecipient = undefined;
 
-      this.httpClient.request('POST', `http://localhost:5555/transactions/pending/`, {
+      this.httpClient.request('POST', `${this.env.nodeUrl}/transactions/pending/`, {
         body: trx,
         observe: 'body',
         responseType: 'json'
@@ -140,13 +143,13 @@ export class AppComponent {
         (httpErr) => {
           console.error('Transaction error: ', httpErr);
         });
-        this.syncAccountTrxs(account);
+      this.syncAccountTrxs(account);
     }
   }
 
   private syncAccountTrxs(account: CryptoAccount): void {
     // get confirmed+pending
-    this.httpClient.request('GET', `http://localhost:5555/address/${account.address}/transactions`, {
+    this.httpClient.request('GET', `${this.env.nodeUrl}/address/${account.address}/transactions`, {
       observe: 'body',
       responseType: 'json'
     }).subscribe(
@@ -166,27 +169,11 @@ export class AppComponent {
     return this.accountsTrxs[account.address] || [];
   }
 
-  public getAccountBalance(account: CryptoAccount): number {
-    let balance: number = 0;
-    let txs = this.getAccountTxs(account);
+  public getAccountBalance(account: CryptoAccount): BigInteger {
+    let allTxs: Transaction[] = this.getAccountTxs(account);
+    let confirmedTxs = _.filter(allTxs, 'blockHash')
+    let pendingTxs = _.filter(allTxs, (tx: Transaction) => { !tx.blockHash });
 
-    for (let i = 0; i < txs.length; i++) {
-      if (txs[i].to == account.address && txs[i].blockHash) {
-        // input transaction, add amount to balance (only mined transactions)
-        balance += txs[i].amount;
-      }
-      else if (txs[i].from == account.address) {
-        // outgoing transaction, subtract amount from balance
-        balance -= txs[i].amount
-      }
-    }
-
-    return balance;
-
+    return this.blockchain.calculateBalance(account.address, confirmedTxs, pendingTxs); // in unis
   }
-
-
-
-
-
 }

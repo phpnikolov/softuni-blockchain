@@ -20,6 +20,7 @@ import { TransactionDetailPage } from './pages/transaction-detail/transaction-de
 import { AccountDetailPage } from './pages/account-detail/account-detail.page';
 import { PageNotFoundPage } from './pages/page-not-found/page-not-found.page';
 import { NavbarComponent } from './components/navbar/navbar.component';
+import { BlockchainService } from './services/blockchain.service';
 
 
 
@@ -101,7 +102,8 @@ const appRoutes: Routes = [
   ],
   providers: [
     StorageService,
-    CryptoService
+    CryptoService,
+    BlockchainService
   ],
   bootstrap: [AppComponent]
 })
