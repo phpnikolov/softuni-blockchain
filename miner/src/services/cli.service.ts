@@ -2,7 +2,7 @@ import { ReadLine } from "readline";
 import * as readline from "readline";
 
 export abstract class CliService {
-    
+
     protected rl: ReadLine = readline.createInterface({
         input: process.stdin,
         output: process.stdout
@@ -13,22 +13,25 @@ export abstract class CliService {
     }
 
     public quetion(msg: string, defaultValue: string = ''): Promise<string> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             this.rl.question(msg + (defaultValue ? ` (${defaultValue})` : '') + ': ', (value: string) => {
+                if (value === 'exit') {
+                    return reject();
+                }
+
                 if (!value) {
                     value = defaultValue;
                 }
 
                 if (value) {
-                    resolve(value)
+                    return resolve(value);
                 }
-                else {
-                    // Asks the same question until receives an answer
-                    this.quetion(msg, defaultValue).then(resolve);
-                }
+
+                // Asks the same question until receives an answer
+                return this.quetion(msg, defaultValue).then(resolve, reject);
             });
         });
     };
 
-    abstract init():void;
+    abstract init(): void;
 }
