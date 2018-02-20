@@ -23,7 +23,7 @@ import { environment } from '../environments/environment';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  public readonly env = environment;
+  public env = environment;
   public accounts: CryptoAccount[];
   public accountsTrxs: { string: Transaction[] }[] = [];
   public selectedAccount: CryptoAccount;
@@ -231,5 +231,14 @@ export class AppComponent {
     let pendingTxs = _.filter(allTxs, (tx: Transaction) => { !tx.blockHash });
 
     return this.blockchain.calculateBalance(account.address, confirmedTxs, pendingTxs); // in unis
+  }
+
+  public changeNode() {
+    let url = prompt('Node URL:', this.env.nodeUrl);
+    if (url) {
+      this.env.nodeUrl = url;
+      this.accountsTrxs = [];
+      this.syncAllAccountsTrxs();
+    }
   }
 }

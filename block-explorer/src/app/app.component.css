@@ -30,3 +30,9 @@
 .card-header {
     font-size: 0.9em;
 }
+
+#change-node-btn {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+}
