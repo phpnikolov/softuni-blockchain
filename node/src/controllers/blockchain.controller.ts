@@ -13,60 +13,44 @@ export class BlockchainController {
 
 
     private blockchain: Block[] = [];
-    public difficulty: number = 4;
     public minerReward: string = this.blockchainService.softUni2Uni(5); // 5 SoftUni
     private pendingTrxs: Transaction[] = [];
 
 
-    public constructor() {
-        this.createGenesisBlock();
+    public constructor(public difficulty: number) {
+
     }
 
-    private createGenesisBlock(): void {
-        if (this.blockchain.length > 0) {
-            return;
+    public createBlock(blockTrxs: Transaction[], nonce: number, timeCreated: number): boolean {
+        let isGenesisBlock = (this.blockchain.length === 0);
+
+        let newBlock: Block;
+        let prevBlock: Block;
+        
+        if (isGenesisBlock) {
+            newBlock = {
+                index: 0,
+                prevBlockHash: Array(64).join("0"),
+                difficulty: 0,
+                transactions: blockTrxs,
+                timeCreated: timeCreated,
+                nonce: nonce
+            };
+        }
+        else {
+            prevBlock = this.getLastBlock();
+
+            newBlock = {
+                index: prevBlock.index + 1,
+                prevBlockHash: prevBlock.blockHash,
+                difficulty: this.difficulty,
+                transactions: blockTrxs,
+                timeCreated: timeCreated,
+                nonce: nonce
+            };
         }
 
-        // donate 100,000 SoftUni to Faucet address
-        let txFaucet: Transaction = {
-            to: '7c2fda3a3089042b458fe85da748914ea33e2497',
-            amount: this.blockchainService.softUni2Uni(100000),
-            timeCreated: (new Date()).getTime()
-        }
-
-        txFaucet.transactionHash = this.blockchainService.calculateTransactionHash(txFaucet);
-
-        let block: Block = {
-            index: 0,
-            prevBlockHash: Array(64).join("0"),
-            difficulty: 0,
-            transactions: [txFaucet],
-            timeCreated: (new Date()).getTime(),
-            nonce: 0
-        };
-        block.blockHash = this.blockchainService.calculatekBlockHash(block.prevBlockHash, block.transactions, block.nonce);
-
-        for (let i = 0; i < block.transactions.length; i++) {
-            block.transactions[i].blockHash = block.blockHash;
-        }
-
-        this.blockchain.push(block);
-    }
-
-
-    public createBlock(blockTrxs: Transaction[], nonce: number): boolean {
-        let prevBlock: Block = this.getLastBlock();
-
-        let newBlock: Block = {
-            index: prevBlock.index + 1,
-            prevBlockHash: prevBlock.blockHash,
-            difficulty: this.difficulty,
-            transactions: blockTrxs,
-            timeCreated: (new Date()).getTime(),
-            nonce: nonce
-        };
-
-        newBlock.blockHash = this.blockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce);
+        newBlock.blockHash = this.blockchainService.calculatekBlockHash(newBlock.prevBlockHash, newBlock.transactions, newBlock.nonce);
 
         // set blockHash
         for (let i = 0; i < blockTrxs.length; i++) {
@@ -74,8 +58,10 @@ export class BlockchainController {
         }
 
         // validate block
-        this.validateBlock(newBlock, prevBlock);
-
+        if (!isGenesisBlock) {
+            this.validateBlock(newBlock, prevBlock);
+        }
+        
         // adds the block to the chain
         this.blockchain.push(newBlock);
 
@@ -93,7 +79,10 @@ export class BlockchainController {
     }
 
     public getLastBlock(): Block {
-        return this.blockchain[this.blockchain.length - 1];
+        let chainLength = this.blockchain.length;
+        if (chainLength > 0) {
+            return this.blockchain[chainLength - 1];
+        }
     }
 
     public addPendingTransaction(trx: Transaction): void {
@@ -109,10 +98,12 @@ export class BlockchainController {
     }
 
     public getPendingTransactions(): Transaction[] {
+        this.filterPendingTransactions();
         return this.pendingTrxs;
     }
 
     public getPendingTransaction(hash: string): Transaction {
+        this.filterPendingTransactions();
         return _.find(this.pendingTrxs, (trx: Transaction) => { return trx.transactionHash == hash; });
     }
 
@@ -127,6 +118,7 @@ export class BlockchainController {
     }
 
     public getTransactions(): Transaction[] {
+        this.filterPendingTransactions();
         // confirmed + pending
         return this.getConfirmedTransactions().concat(this.getPendingTransactions());
     }
@@ -178,7 +170,7 @@ export class BlockchainController {
     }
 
     private validateTrasaction(trx: Transaction, isBlockReward: boolean = false): void {
-        let trxAmount:BigInteger = bigInt(trx.amount);
+        let trxAmount: BigInteger = bigInt(trx.amount);
         if (trxAmount.lesserOrEquals(0)) {
             throw 'Balance must be greater than 0.';
         }
@@ -209,7 +201,7 @@ export class BlockchainController {
                 throw 'Invalid signature.';
             }
             // Check if sender have enough money
-            let senderBalance:BigInteger = this.blockchainService.calculateBalance(trx.from, this.getConfirmedTransactions(), this.getPendingTransactions());
+            let senderBalance: BigInteger = this.blockchainService.calculateBalance(trx.from, this.getConfirmedTransactions(), this.getPendingTransactions());
             if (senderBalance.lesser(trx.amount)) {
                 throw 'Not enough balance.';
             }
@@ -223,5 +215,19 @@ export class BlockchainController {
         _.remove(this.pendingTrxs, (trx: Transaction) => {
             return this.getConfirmedTransaction(trx.transactionHash);
         });
+    }
+
+    /**
+     * unit to measure PoW for entire blockchain
+     * SUM(16^block difficulty)
+     */
+    public getCumulativePoW(): number {
+        let comulativePow: number = 0;
+
+        this.blockchain.forEach(block => {
+            comulativePow += Math.pow(16, block.difficulty);
+        });
+
+        return comulativePow;
     }
 }

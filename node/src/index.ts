@@ -7,8 +7,9 @@ import { Transaction } from "./interfaces/transaction";
 
 import { CliService } from "./services/cli.service";
 import { NodeController } from "./controllers/node.controller";
+import { PeerController } from "./controllers/peer.controller";
 
-let nodeCtrl = new NodeController();
+let nodeCtrl: NodeController;
 
 const app = express();
 
@@ -34,8 +35,21 @@ app.post('/blocks', [
     let nonce: number = Number(req.body['nonce']) || 0;
     let transactions: Transaction[] = req.body['transactions'];
 
+    let timeCreated = Number(req.body['timeCreated']) || (new Date()).getTime();
+
     try {
-        nodeCtrl.chain.createBlock(transactions, nonce);
+        nodeCtrl.chain.createBlock(transactions, nonce, timeCreated);
+
+        // send this block to all peers
+        let peers = nodeCtrl.getPeers();
+        peers.forEach(peer => {
+            peer.addBlock(transactions, nonce, timeCreated).then(() => {
+
+            }).catch(() => {
+
+            });
+        });
+
         return res.status(201).json();
     }
     catch (ex) {
@@ -100,7 +114,7 @@ app.post('/transactions/pending', [
 ], (req, res) => {
     let errors = expressValidator.validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ error:_.first(_.map(errors.array(), 'msg')) });
+        return res.status(400).json({ error: _.first(_.map(errors.array(), 'msg')) });
     }
 
     let trx: Transaction = {
@@ -115,6 +129,17 @@ app.post('/transactions/pending', [
 
     try {
         nodeCtrl.chain.addPendingTransaction(trx);
+
+        // send this transaction to all peers
+        let peers = nodeCtrl.getPeers();
+        peers.forEach(peer => {
+            peer.addPendingTransaction(trx).then(() => {
+
+            }).catch(() => {
+                
+            });
+        });
+
         return res.status(201).json();
     }
     catch (ex) {
@@ -137,8 +162,8 @@ app.get('/transactions/:trxHash', (req, res) => {
 
 // Returns confirmed & pending transactions for specified :address
 app.get('/address/:address/transactions/', (req, res) => {
-    let address:string = req.params.address;
-    let txs:Transaction[] = nodeCtrl.chain.getTransactions();
+    let address: string = req.params.address;
+    let txs: Transaction[] = nodeCtrl.chain.getTransactions();
 
     let addrTrxs = _.filter(txs, (trx: Transaction) => { return trx.to == address || trx.from == address; });
     return res.json(addrTrxs);
@@ -146,8 +171,8 @@ app.get('/address/:address/transactions/', (req, res) => {
 
 // Returns confirmed transactions for specified :address
 app.get('/address/:address/transactions/confirmed', (req, res) => {
-    let address:string = req.params.address;
-    let confirmedTrxs:Transaction[] = nodeCtrl.chain.getConfirmedTransactions();
+    let address: string = req.params.address;
+    let confirmedTrxs: Transaction[] = nodeCtrl.chain.getConfirmedTransactions();
 
     let addrTrxs = _.filter(confirmedTrxs, (trx: Transaction) => { return trx.to == address || trx.from == address; });
     return res.json(addrTrxs);
@@ -155,28 +180,91 @@ app.get('/address/:address/transactions/confirmed', (req, res) => {
 
 // Returns pending transactions for specified :address
 app.get('/address/:address/transactions/pending', (req, res) => {
-    let address:string = req.params.address;
-    let pendingTrxs:Transaction[] = nodeCtrl.chain.getPendingTransactions();
+    let address: string = req.params.address;
+    let pendingTrxs: Transaction[] = nodeCtrl.chain.getPendingTransactions();
 
     let addrTrxs = _.filter(pendingTrxs, (trx: Transaction) => { return trx.to == address || trx.from == address; });
     return res.json(addrTrxs);
 });
 
+// Get peers
+app.get('/peers', (req, res) => {
+    return res.json(nodeCtrl.getPeersOrigins());
+});
+
+app.post('/peers', [
+    expressValidator.check('url', "'url' is required parameter").exists()
+], (req, res) => {
+    let errors = expressValidator.validationResult(req).array();
+    if (errors.length > 0) {
+        return res.status(400).json({ error: errors[0].msg });
+    }
+
+    try {
+        let isAdded: boolean = nodeCtrl.addPeer(req.body['url']);
+        return res.status(isAdded ? 201 : 200).json();
+    }
+    catch (ex) {
+        console.log(ex);
+        return res.status(400).json({ error: ex });
+    }
+});
+
 // Command-line interface
 new class extends CliService {
     public init() {
-        this.quetion('Set block difficulty', nodeCtrl.chain.difficulty.toString()).then((dificulty: string) => {
-            nodeCtrl.chain.difficulty = parseInt(dificulty);
+        this.quetion('Set block difficulty', '4').then((dificulty: string) => {
 
-            this.quetion('Set Server hostname', 'localhost').then((hostname: string) => {
-                let port:number = 5555;
+            this.quetion('Set Server hostname', '127.0.0.1').then((hostname: string) => {
+                let port: number = 5555;
+                let nodeUrl = `http://${hostname}:${port}`;
                 app.listen(port, hostname, () => {
-                    console.log(`\nServer started: http://${hostname}:${port}`);
-                    this.rl.close();
+                    console.log(`\nServer started: ${nodeUrl}`);
+                    nodeCtrl = new NodeController(nodeUrl, parseInt(dificulty));
+                    this.showMenu();
+
                 }).on('error', (err: Error) => {
-                    console.error(`\nError: Can't start server http://${hostname}:${port}`);
+                    console.error(`\nError: Can't start server ${nodeUrl}`);
+                    process.exit(0);
                 });
-            });
-        });
+            }).catch(process.exit);
+        }).catch(process.exit);
+    }
+
+    public showMenu() {
+        this.quetion(`\nEnter operation ['info', 'add-peer', 'exit']`).then((operation) => {
+            operation = operation.toLocaleLowerCase().trim();
+            switch (operation) {
+                case 'info':
+                    console.log(JSON.stringify(nodeCtrl.getInfo(), null, 2));
+                    this.showMenu();
+                    break;
+
+                case 'add-peer':
+                    this.quetion('Enter peer url').then((url: string) => {
+                        try {
+                            let res = nodeCtrl.addPeer(url);
+                            if (res) {
+                                console.log('Peer is added');
+                            }
+                            else {
+                                console.log('This peer awready exists');
+                            }
+                        }
+                        catch (ex) {
+                            console.error(ex);
+                        }
+                        this.showMenu();
+                    }).catch(() => {
+                        this.showMenu();
+                    });
+                    break;
+
+                default:
+                    console.log(`Invalid operation '${operation}'`);
+                    this.showMenu();
+                    break;
+            }
+        }).catch(process.exit);
     }
 };
