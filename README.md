@@ -72,3 +72,5 @@ GET | /transactions/:trHash | Returns transaction for specified :trxHash
 GET | /address/:address/transactions/ | Returns confirmed & pending transactions for specified :address
 GET | /address/:address/transactions/confirmed | Returns confirmed transactions for specified :address
 GET | /address/:address/transactions/pending | Returns pending transactions for specified :address
+GET | /peers | Returns peers
+POST | /peers | Adds peer
