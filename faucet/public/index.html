@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <script src='https://www.google.com/recaptcha/api.js'></script>
     <title>SoftUni Faucet</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -19,7 +20,8 @@
                         <label>Enter your account address</label>
                         <input required type="text" name="to" class="form-control">
                     </div>
-                    <button type="submit" class="btn btn-primary">Send me 1 SoftUni</button>
+                    <div class="g-recaptcha" data-sitekey="6LdyaEYUAAAAALMYl3tIbzeygftqr0tpq95EsDRt"></div>
+                    <button type="submit" class="btn btn-primary mt-3">Send me 1 SoftUni</button>
                 </form>
             </div>
         </div>
