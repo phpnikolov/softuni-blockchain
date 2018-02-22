@@ -22,6 +22,7 @@ export class NodeController {
         // donate 100,000 SoftUni to Faucet address
         let txFaucet: Transaction = {
             to: '7c2fda3a3089042b458fe85da748914ea33e2497',
+            fee: this.blockchainService.softUni2Uni(0),
             amount: this.blockchainService.softUni2Uni(100000),
             timeCreated: (new Date()).getTime()
         }

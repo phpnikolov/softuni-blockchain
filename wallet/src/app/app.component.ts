@@ -28,14 +28,20 @@ export class AppComponent {
   public accountsTrxs: { string: Transaction[] }[] = [];
   public selectedAccount: CryptoAccount;
 
+  public minTrxFee : number = this.blockchain.uni2SoftUni(this.blockchain.MIN_TRANSACTION_FEE);
+
   public trxRecipient: string;
   public trxAmount: number;
+  public trxFee: number = this.minTrxFee * 2;
 
   public fg: FormGroup = new FormGroup({
     'recipient': new FormControl({
       validators: [Validators.required],
     }),
     'amount': new FormControl({
+      validators: [Validators.required]
+    }),
+    'fee': new FormControl({
       validators: [Validators.required]
     })
   });
@@ -170,6 +176,7 @@ export class AppComponent {
       from: account.address,
       to: this.trxRecipient,
       amount: this.blockchain.softUni2Uni(this.trxAmount),
+      fee: this.blockchain.softUni2Uni(this.trxFee),
       timeCreated: (new Date()).getTime(),
       senderPubKey: account.publicKey
     };

@@ -4,13 +4,14 @@ import { HttpClient } from '@angular/common/http';
 import * as _ from 'lodash';
 import { ActivatedRoute } from '@angular/router';
 import { BlockchainService } from '../../services/blockchain.service';
-
+import { environment } from '../../../environments/environment';
 
 @Component({
   templateUrl: './transaction-list.page.html',
   styleUrls: ['./transaction-list.page.css']
 })
 export class TransactionListPage implements OnInit {
+  private readonly env = environment;
   private autoLoadingId;
   private transactions: Transaction[] = [];
   constructor(
@@ -49,7 +50,7 @@ export class TransactionListPage implements OnInit {
 
   private loadTransactions(apiCall: string): void {
     // get confirmed+pending
-    this.httpClient.request('GET', `http://127.0.01:5555/${apiCall}`, {
+    this.httpClient.request('GET', `${this.env.nodeUrl}/${apiCall}`, {
       observe: 'body',
       responseType: 'json'
     }).subscribe(

@@ -3,6 +3,9 @@ import { Transaction } from "../interfaces/transaction";
 import { BlockchainService } from "../services/blockchain.service";
 import * as request from 'request';
 
+import { BigInteger } from "big-integer";
+import * as bigInt from 'big-integer';
+
 export class FaucetController {
     private crypto = new CryptoService;
     private blockchain = new BlockchainService;
@@ -31,6 +34,7 @@ export class FaucetController {
             from: this.getAddress(),
             to: address,
             amount: this.blockchain.softUni2Uni(1),
+            fee: bigInt(this.blockchain.MIN_TRANSACTION_FEE).multiply(3).toString(), // 3 times more than min fee,
             timeCreated: (new Date()).getTime(),
         };
 

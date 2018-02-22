@@ -5,6 +5,7 @@ import { BigInteger } from "big-integer";
 import * as bigInt from 'big-integer';
 
 export class BlockchainService {
+    public readonly MIN_TRANSACTION_FEE = this.softUni2Uni(0.0001);
 
     public calculatekBlockHash(prevBlockHash: string, transactions: Transaction[], nonce): string {
         // sort transaction by create timne
@@ -30,8 +31,9 @@ export class BlockchainService {
                 balance = balance.add(trx.amount);
             }
             else if (trx.from == address) {
-                // outgoing transaction, subtract amount from balance
+                // outgoing transaction, subtract amount and fee from balance
                 balance = balance.minus(trx.amount);
+                balance = balance.minus(trx.fee);
             }
         }
 
@@ -39,8 +41,9 @@ export class BlockchainService {
             const trx = pendingTxs[i];
 
             if (trx.from == address) {
-                // penging outgoing transaction, subtract amount from balance
+                // penging outgoing transaction, subtract amount and fee from balance
                 balance = balance.minus(trx.amount);
+                balance = balance.minus(trx.fee);
             }
         }
 
@@ -59,7 +62,7 @@ export class BlockchainService {
 
     // Uni - the smallest unit
     // SoftUni - the smallest unit (10^18 uni)
-    public uni2SoftUni(value: string | BigInteger, power: number): number {
+    public uni2SoftUni(value: string | BigInteger): number {
         let intPart:string = value.toString().slice(0,-18);
         let decPart:string = _.padStart(value.toString().slice(-18), 18, '0');
 

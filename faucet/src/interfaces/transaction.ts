@@ -1,13 +1,14 @@
 export interface Transaction {
-    transactionHash?:string,
-    from?:string,
-    to:string,
-    amount:string,
+    transactionHash?: string,
+    from?: string,
+    to: string,
+    amount: string,
+    fee: string,
 
     senderPubKey?: string,
     senderSignature?: string,
-    timeCreated:number,
+    timeCreated: number,
 
 
-    blockHash?:string,
+    blockHash?: string,
 }

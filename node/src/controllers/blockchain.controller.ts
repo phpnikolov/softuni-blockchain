@@ -131,6 +131,11 @@ export class BlockchainController {
 
 
     private validateBlock(newBlock: Block, prevBlock: Block): void {
+        let minerReward = bigInt(this.minerReward);
+
+        newBlock.transactions.forEach(tx => {
+            minerReward = minerReward.add(tx.fee);
+        });
 
         // validate transactions
         for (let i = 0; i < newBlock.transactions.length; i++) {
@@ -148,7 +153,12 @@ export class BlockchainController {
                     throw 'Incorect block hash.';
                 }
 
-                this.validateTrasaction(trx, isBlockReward);
+                if (isBlockReward) {
+                    this.valdiateRewardTransaction(trx, minerReward);
+                }
+                else {
+                    this.validateTrasaction(trx);
+                }
             }
             catch (ex) {
                 throw `Invalid transaction '${trx.transactionHash}': ` + ex;
@@ -165,15 +175,36 @@ export class BlockchainController {
         if (this.blockchainService.calculateHashDifficulty(newBlock.blockHash) < this.difficulty) {
             throw 'Block hash have less difficulty.';
         }
-
-
     }
 
-    private validateTrasaction(trx: Transaction, isBlockReward: boolean = false): void {
+    private valdiateRewardTransaction(trx:Transaction, reward:BigInteger) {
         let trxAmount: BigInteger = bigInt(trx.amount);
+        let trxFee: BigInteger = bigInt(trx.fee);
+
+        if (trx.transactionHash != this.blockchainService.calculateTransactionHash(trx)) {
+            throw 'Invalid transaction hash.';
+        }
+
+        if (trx.from) {
+            throw 'From must be empty.';
+        }
+
+        if (trxAmount.notEquals(reward)) {
+            throw 'Invalid miner reward.';
+        }
+        if (trxFee.notEquals(0)) {
+            throw 'Fee must be 0 for miners reward.';
+        }
+    }
+
+    private validateTrasaction(trx: Transaction): void {
+        let trxAmount: BigInteger = bigInt(trx.amount);
+        let trxFee: BigInteger = bigInt(trx.fee);
+
         if (trxAmount.lesserOrEquals(0)) {
             throw 'Balance must be greater than 0.';
         }
+
         if (trx.transactionHash != this.blockchainService.calculateTransactionHash(trx)) {
             throw 'Invalid transaction hash.';
         }
@@ -182,30 +213,26 @@ export class BlockchainController {
             throw 'The transactions is already in the blockchain.';
         }
 
-        if (isBlockReward) {
-            if (trx.from) {
-                throw 'From must be empty.';
-            }
-            if (trxAmount.notEquals(this.minerReward)) {
-                throw 'Invalid miner reward.';
-            }
+        // validate sender address with public key
+        if (this.cryptoService.getAddress(trx.senderPubKey) !== trx.from) {
+            throw 'Sender address didn\'t match with Public Key'
         }
-        else {
-            // validate sender address with public key
-            if (this.cryptoService.getAddress(trx.senderPubKey) !== trx.from) {
-                throw 'Sender address didn\'t match with Public Key'
-            }
 
-            // validate signature
-            if (!this.cryptoService.isValidSignature(trx.transactionHash, trx.senderSignature, trx.senderPubKey)) {
-                throw 'Invalid signature.';
-            }
-            // Check if sender have enough money
-            let senderBalance: BigInteger = this.blockchainService.calculateBalance(trx.from, this.getConfirmedTransactions(), this.getPendingTransactions());
-            if (senderBalance.lesser(trx.amount)) {
-                throw 'Not enough balance.';
-            }
+        // validate fee
+        if (trxFee.lesser(this.blockchainService.MIN_TRANSACTION_FEE)) {
+            throw `Fee must be greater than ${this.blockchainService.MIN_TRANSACTION_FEE}.`;
         }
+
+        // validate signature
+        if (!this.cryptoService.isValidSignature(trx.transactionHash, trx.senderSignature, trx.senderPubKey)) {
+            throw 'Invalid signature.';
+        }
+        // Check if sender have enough money
+        let senderBalance: BigInteger = this.blockchainService.calculateBalance(trx.from, this.getConfirmedTransactions(), this.getPendingTransactions());
+        if (senderBalance.lesser(trx.amount)) {
+            throw 'Not enough balance.';
+        }
+        
     }
 
     /** 

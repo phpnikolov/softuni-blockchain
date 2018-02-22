@@ -7,6 +7,7 @@
             <th scope="col">From</th>
             <th scope="col">To</th>
             <th scope="col" class="text-right">Amount</th>
+            <th scope="col" class="text-right">Fee</th>
             <th scope="col">Status</th>
         </tr>
     </thead>
@@ -26,6 +27,7 @@
                 <a title="{{tx.to}}" *ngIf="tx.to" [routerLink]="['/accounts', tx.to]">{{tx.to | slice:0:12}}...</a>
             </td>
             <td class="text-right">{{blockchain.uni2SoftUni(tx.amount) | number:'1.0-5'}} SoftUni</td>
+            <td class="text-right">{{blockchain.uni2SoftUni(tx.fee) | number:'1.0-5'}}</td>
             <td>
                 <span *ngIf="tx.blockHash" class="badge badge-success">confirmed</span>
                 <span *ngIf="!tx.blockHash" class="badge badge-secondary">pending</span>

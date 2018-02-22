@@ -24,7 +24,11 @@
     </tr>
     <tr>
         <th>Amount</th>
-        <td>{{transaction.amount}}</td>
+        <td>{{blockchain.uni2SoftUni(tx.amount) | number:'1.0-8'}} SoftUni</td>
+    </tr>
+    <tr>
+        <th>Fee</th>
+        <td>{{blockchain.uni2SoftUni(tx.amount) | number:'1.0-8'}} SoftUni</td>
     </tr>
     <tr>
         <th>Timestamp</th>

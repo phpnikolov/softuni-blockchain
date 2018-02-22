@@ -2,7 +2,9 @@ import * as request from 'request';
 import { setInterval } from "timers";
 import { BlockchainService } from "../services/blockchain.service";
 import { Transaction } from '../interfaces/transaction';
-
+import * as _ from "lodash";
+import { BigInteger } from "big-integer";
+import * as bigInt from 'big-integer';
 
 export class MinerController {
     private blockchainService:BlockchainService = new BlockchainService;
@@ -45,20 +47,27 @@ export class MinerController {
         request({
             uri: this.nodeUri + '/transactions/pending',
             json: true
-        }, (error, response, body) => {
+        }, (error, response, pendingTxs:Transaction[]) => {
             if (!error && response.statusCode == 200) {
+                let feeSum = bigInt(0);
+
+                pendingTxs.forEach(tx => {
+                    feeSum = feeSum.add(tx.fee);
+                });
+
                 // add miner reward transaction
                 let trxReward: Transaction = {
                     to: this.miningAddress,
-                    amount: this.minerReward,
+                    fee: this.blockchainService.softUni2Uni(0),
+                    amount: feeSum.add(this.minerReward).toString(),
                     timeCreated: (new Date()).getTime()
                 };
 
                 trxReward.transactionHash = this.blockchainService.calculateTransactionHash(trxReward);
 
-                body.unshift(trxReward);
+                pendingTxs.unshift(trxReward);
 
-                this.pendingTransactions = body;
+                this.pendingTransactions = pendingTxs;
             }
             else {
                 console.error('Can\'n get pending transactions from the Node!');
@@ -67,7 +76,7 @@ export class MinerController {
     }
 
 
-    private mine(nonce: number = 0): void {
+    private mine(nonce: number): void {
         if (!this.lastBlockHash || !this.minerReward || this.pendingTransactions.length === 0) {
             setTimeout(() => {
                 this.mine(nonce);
@@ -114,7 +123,7 @@ export class MinerController {
             }
 
             this.sync();
-            this.mine(0);
+            this.mine(_.random(0, 100000000));
         });
     }
 
@@ -139,7 +148,7 @@ export class MinerController {
             prevProcessedHashes = this.processedHashes;
         }, 5000);
 
-        this.mine();
+        this.mine(_.random(0, 100000000));
     }
 
 

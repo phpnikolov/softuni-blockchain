@@ -107,6 +107,7 @@ app.post('/transactions/pending', [
     expressValidator.check('from', "'from' is required parameter").exists(),
     expressValidator.check('to', "'to' is required parameter").exists(),
     expressValidator.check('amount', "'amount' is required parameter").exists(),
+    expressValidator.check('fee', "'fee' is required parameter").exists(),
     expressValidator.check('senderPubKey', "'senderPubKey' is required parameter").exists(),
     expressValidator.check('senderSignature', "'senderSignature' is required parameter").exists(),
     expressValidator.check('timeCreated', "'timeCreated' is required parameter").exists(),
@@ -122,6 +123,7 @@ app.post('/transactions/pending', [
         from: req.body['from'],
         to: req.body['to'],
         amount: req.body['amount'],
+        fee: req.body['fee'],
         senderPubKey: req.body['senderPubKey'],
         senderSignature: req.body['senderSignature'],
         timeCreated: Number(req.body['timeCreated']),
@@ -232,7 +234,7 @@ new class extends CliService {
     }
 
     public showMenu() {
-        this.quetion(`\nEnter operation ['info', 'add-peer', 'exit']`).then((operation) => {
+        this.quetion(`\nEnter operation ['info', 'add-peer', 'difficulty' 'exit']`).then((operation) => {
             operation = operation.toLocaleLowerCase().trim();
             switch (operation) {
                 case 'info':
@@ -254,6 +256,16 @@ new class extends CliService {
                         catch (ex) {
                             console.error(ex);
                         }
+                        this.showMenu();
+                    }).catch(() => {
+                        this.showMenu();
+                    });
+                    break;
+
+                case 'difficulty':
+                    this.quetion('Enter difficulty', nodeCtrl.chain.difficulty.toString()).then((difficulty: string) => {
+                        nodeCtrl.chain.difficulty = parseInt(difficulty);
+                        console.log('Difficulty is now: ' + nodeCtrl.chain.difficulty);
                         this.showMenu();
                     }).catch(() => {
                         this.showMenu();
