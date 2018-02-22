@@ -16,6 +16,7 @@ import { BigInteger } from 'big-integer';
 import * as bigInt from 'big-integer';
 
 import { environment } from '../environments/environment';
+import { AlertsService } from './services/alerts.service';
 
 @Component({
   selector: 'app-root',
@@ -28,7 +29,7 @@ export class AppComponent {
   public accountsTrxs: { string: Transaction[] }[] = [];
   public selectedAccount: CryptoAccount;
 
-  public minTrxFee : number = this.blockchain.uni2SoftUni(this.blockchain.MIN_TRANSACTION_FEE);
+  public minTrxFee: number = this.blockchain.uni2SoftUni(this.blockchain.MIN_TRANSACTION_FEE);
 
   public trxRecipient: string;
   public trxAmount: number;
@@ -52,6 +53,7 @@ export class AppComponent {
     public blockchain: BlockchainService,
     private crypto: CryptoService,
     private httpClient: HttpClient,
+    private alerts: AlertsService
   ) {
     this.storage.useNamespace('softuni-wallet');
     this.accounts = this.storage.getVal('accounts') || [];
@@ -119,7 +121,8 @@ export class AppComponent {
   public showPrivateKey(account: CryptoAccount): void {
     let privateKey = this.unlockPrivateKey(account.privateKey);
     if (privateKey) {
-      alert(privateKey);
+      this.alerts.clearAlerts();
+      this.alerts.addMessage('Your private key is:\n' + privateKey, 10000);
     }
 
   }
@@ -165,7 +168,8 @@ export class AppComponent {
 
 
     if (!decryptedPrivateKey || decryptedPrivateKey.length != 64) {
-      alert('Wrong password!');
+      this.alerts.addError('Wrong password!');
+      return null;
     }
 
     return decryptedPrivateKey;
@@ -201,10 +205,15 @@ export class AppComponent {
         responseType: 'json'
       }).subscribe(
         (data) => {
-          console.log('Transaction success!')
+          this.alerts.addMessage('Transaction is accepted.');
         },
         (httpErr) => {
-          console.error('Transaction error: ', httpErr);
+          let errMsg = 'Transaction error.';
+          if (httpErr.error && httpErr.error.error) {
+            errMsg = httpErr.error.error;
+          }
+
+          this.alerts.addError(errMsg);
         });
       this.syncAccountTrxs(account);
     }
@@ -218,6 +227,15 @@ export class AppComponent {
     }).subscribe(
       (data: Transaction[]) => {
         this.accountsTrxs[account.address] = _.orderBy(data, ['timeCreated'], ['desc']);
+      },
+      (httpErr) => {
+        let errMsg = `Can't Connect to the Node (${this.env.nodeUrl}).`;
+        if (httpErr.error && httpErr.error.error) {
+          errMsg = httpErr.error.error;
+        }
+
+        this.alerts.clearAlerts();
+        this.alerts.addError(errMsg);
       });
   }
 

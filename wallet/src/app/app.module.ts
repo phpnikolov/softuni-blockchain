@@ -9,11 +9,14 @@ import { StorageService } from './services/storage.service';
 import { BlockchainService } from './services/blockchain.service';
 import { CryptoService } from './services/crypto.service';
 import { HttpClientModule } from '@angular/common/http';
+import { AlertsComponent } from './components/alerts/alerts.component';
+import { AlertsService } from './services/alerts.service';
 
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    AlertsComponent
   ],
   imports: [
     BrowserModule,
@@ -24,6 +27,7 @@ import { HttpClientModule } from '@angular/common/http';
   ],
   providers: [
     StorageService,
+    AlertsService,
     BlockchainService,
     CryptoService
   ],
