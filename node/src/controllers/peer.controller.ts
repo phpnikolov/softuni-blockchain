@@ -38,8 +38,8 @@ export class PeerController {
         return this.request('POST', '/tranactions/pending', tx);
     }
 
-    public addBlock(txs: Transaction[], nonce: number, timeCreated: number): Promise<any> {
-        return this.request('POST', '/blocks', { transactions: txs, nonce: nonce, timeCreated: timeCreated });
+    public addBlock(block: Block): Promise<any> {
+        return this.request('POST', '/blocks', block);
     }
 
     private request(method: string, path: string, data?): Promise<any> {

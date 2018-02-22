@@ -8,6 +8,7 @@ import { Transaction } from "./interfaces/transaction";
 import { CliService } from "./services/cli.service";
 import { NodeController } from "./controllers/node.controller";
 import { PeerController } from "./controllers/peer.controller";
+import { Block } from "./interfaces/block";
 
 let nodeCtrl: NodeController;
 
@@ -23,7 +24,10 @@ app.get('/info', (req, res) => {
 
 // Miners submit their work here
 app.post('/blocks', [
+    expressValidator.check('prevBlockHash', "'prevBlockHash' is required parameter").exists(),
+    expressValidator.check('difficulty', "'difficulty' is required parameter").exists(),
     expressValidator.check('transactions', "'transactions' is required parameter").exists(),
+    expressValidator.check('timeCreated', "'timeCreated' is required parameter").exists(),
     expressValidator.check('nonce', "'nonce' is required parameter").exists()
 
 ], (req, res) => {
@@ -32,18 +36,21 @@ app.post('/blocks', [
         return res.status(400).json({ error: _.first(_.map(errors.array(), 'msg')) });
     }
 
-    let nonce: number = Number(req.body['nonce']) || 0;
-    let transactions: Transaction[] = req.body['transactions'];
-
-    let timeCreated = Number(req.body['timeCreated']) || (new Date()).getTime();
+    let nextBlock:Block = {
+        prevBlockHash: req.body['prevBlockHash'],
+        difficulty: Number(req.body['difficulty']),
+        transactions: req.body['transactions'],
+        timeCreated: Number(req.body['timeCreated']),
+        nonce: Number(req.body['nonce'])
+    }
 
     try {
-        nodeCtrl.chain.createBlock(transactions, nonce, timeCreated);
+        nodeCtrl.chain.createBlock(nextBlock);
 
         // send this block to all peers
         let peers = nodeCtrl.getPeers();
         peers.forEach(peer => {
-            peer.addBlock(transactions, nonce, timeCreated).then(() => {
+            peer.addBlock(nextBlock).then(() => {
 
             }).catch(() => {
 
@@ -215,21 +222,18 @@ app.post('/peers', [
 // Command-line interface
 new class extends CliService {
     public init() {
-        this.quetion('Set block difficulty', '4').then((dificulty: string) => {
+        this.quetion('Set Server hostname', '127.0.0.1').then((hostname: string) => {
+            let port: number = 5555;
+            let nodeUrl = `http://${hostname}:${port}`;
+            app.listen(port, hostname, () => {
+                console.log(`\nServer started: ${nodeUrl}`);
+                nodeCtrl = new NodeController(nodeUrl);
+                this.showMenu();
 
-            this.quetion('Set Server hostname', '127.0.0.1').then((hostname: string) => {
-                let port: number = 5555;
-                let nodeUrl = `http://${hostname}:${port}`;
-                app.listen(port, hostname, () => {
-                    console.log(`\nServer started: ${nodeUrl}`);
-                    nodeCtrl = new NodeController(nodeUrl, parseInt(dificulty));
-                    this.showMenu();
-
-                }).on('error', (err: Error) => {
-                    console.error(`\nError: Can't start server ${nodeUrl}`);
-                    process.exit(0);
-                });
-            }).catch(process.exit);
+            }).on('error', (err: Error) => {
+                console.error(`\nError: Can't start server ${nodeUrl}`);
+                process.exit(0);
+            });
         }).catch(process.exit);
     }
 

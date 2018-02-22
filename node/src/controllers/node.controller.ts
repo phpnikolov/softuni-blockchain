@@ -16,8 +16,8 @@ export class NodeController {
     public chain: BlockchainController;
     private peers: PeerController[] = [];
 
-    public constructor(private nodeUrl: string, difficylty: number) {
-        this.chain = new BlockchainController(difficylty);
+    public constructor(private nodeUrl: string) {
+        this.chain = new BlockchainController();
 
         // donate 100,000 SoftUni to Faucet address
         let txFaucet: Transaction = {
@@ -28,8 +28,16 @@ export class NodeController {
         }
         txFaucet.transactionHash = this.blockchainService.calculateTransactionHash(txFaucet);
 
+        let genesisBlock:Block = {
+            prevBlockHash: Array(64).join('0'),
+            difficulty: 0,
+            transactions: [txFaucet],
+            timeCreated: (new Date()).getTime(),
+            nonce: 0
+        }
+
         // add genesis block
-        this.chain.createBlock([txFaucet], 0, (new Date()).getTime());
+        this.chain.createBlock(genesisBlock);
 
 
         // Sync with other nodes
@@ -160,7 +168,7 @@ export class NodeController {
     }
 
     private approveNewChain(blocks: Block[]) {
-        let extChain = new BlockchainController(0);
+        let extChain = new BlockchainController();
 
         // instance new Blochain and validate all blocks and transactions
         for (let i = 0; i < blocks.length; i++) {
@@ -168,7 +176,7 @@ export class NodeController {
             extChain.difficulty = block.difficulty;
 
             try {
-                extChain.createBlock(block.transactions, block.nonce, block.timeCreated);
+                extChain.createBlock(block);
             }
             catch (ex) {
                 console.error(ex);

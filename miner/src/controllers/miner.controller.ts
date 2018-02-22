@@ -2,18 +2,18 @@ import * as request from 'request';
 import { setInterval } from "timers";
 import { BlockchainService } from "../services/blockchain.service";
 import { Transaction } from '../interfaces/transaction';
-import * as _ from "lodash";
 import { BigInteger } from "big-integer";
 import * as bigInt from 'big-integer';
+import { Block } from '../interfaces/block';
 
 export class MinerController {
-    private blockchainService:BlockchainService = new BlockchainService;
+    private blockchainService: BlockchainService = new BlockchainService;
     private nodeUri: string;
 
-    private lastBlockHash: string;
+    private prevBlockHash: string;
     private difficulty: number;
     private minerReward: string;
-    private pendingTransactions: Transaction[];
+    private nextBlock: Block;
 
     private processedHashes = 0;
 
@@ -35,7 +35,7 @@ export class MinerController {
             json: true
         }, (error, response, body) => {
             if (!error && response.statusCode == 200) {
-                this.lastBlockHash = body.lastBlockHash;
+                this.prevBlockHash = body.lastBlockHash;
                 this.difficulty = Number(body.difficulty);
                 this.minerReward = body.minerReward;
             }
@@ -47,7 +47,7 @@ export class MinerController {
         request({
             uri: this.nodeUri + '/transactions/pending',
             json: true
-        }, (error, response, pendingTxs:Transaction[]) => {
+        }, (error, response, pendingTxs: Transaction[]) => {
             if (!error && response.statusCode == 200) {
                 let feeSum = bigInt(0);
 
@@ -67,7 +67,13 @@ export class MinerController {
 
                 pendingTxs.unshift(trxReward);
 
-                this.pendingTransactions = pendingTxs;
+                this.nextBlock = {
+                    prevBlockHash: this.prevBlockHash,
+                    difficulty: this.difficulty,
+                    transactions: pendingTxs,
+                    timeCreated: (new Date()).getTime(),
+                    nonce: 0
+                }
             }
             else {
                 console.error('Can\'n get pending transactions from the Node!');
@@ -76,43 +82,38 @@ export class MinerController {
     }
 
 
-    private mine(nonce: number): void {
-        if (!this.lastBlockHash || !this.minerReward || this.pendingTransactions.length === 0) {
+    private mine(): void {
+        if (!this.nextBlock) {
             setTimeout(() => {
-                this.mine(nonce);
+                this.mine();
             }, 100);
             return;
         }
 
-        let blockHash = this.blockchainService.calculatekBlockHash(this.lastBlockHash, this.pendingTransactions, nonce);
+        let blockHash = this.blockchainService.calculatekBlockHash(this.nextBlock);
         this.processedHashes++;
-        let hashDifficulty:number = this.blockchainService.calculateHashDifficulty(blockHash);
+        let hashDifficulty: number = this.blockchainService.calculateHashDifficulty(blockHash);
 
         if (hashDifficulty >= this.difficulty) {
-            console.log(`Block found!!! Nonce ${nonce}; Hash: ${blockHash}`);
-            this.submitBlock(this.pendingTransactions, nonce);
-            this.lastBlockHash = undefined;
-            this.pendingTransactions = undefined;
-            this.minerReward = undefined;
-            this.lastBlockHash = undefined;
+            console.log(`Block found!!! Nonce ${this.nextBlock.nonce}; Hash: ${blockHash}`);
+
+            this.submitBlock(this.nextBlock);
+            this.nextBlock = undefined;
         }
         else {
-            nonce++;
+            this.nextBlock.nonce++;
             setTimeout(() => {
-                this.mine(nonce);
+                this.mine();
             }, 0);
         }
     }
 
 
-    private submitBlock(transactions: Transaction[], nonce: number): void {
+    private submitBlock(nextBlock: Block): void {
         request({
             method: 'POST',
             uri: this.nodeUri + '/blocks',
-            json: {
-                transactions: transactions,
-                nonce: nonce
-            }
+            json: nextBlock
         }, (error, response, body) => {
             if (!error && response.statusCode == 201) {
                 console.log('Block is accepted.');
@@ -123,7 +124,7 @@ export class MinerController {
             }
 
             this.sync();
-            this.mine(_.random(0, 100000000));
+            this.mine();
         });
     }
 
@@ -148,7 +149,7 @@ export class MinerController {
             prevProcessedHashes = this.processedHashes;
         }, 5000);
 
-        this.mine(_.random(0, 100000000));
+        this.mine();
     }
 
 

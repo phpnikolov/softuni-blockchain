@@ -3,16 +3,17 @@ import * as _ from "lodash";
 import { Transaction } from "../interfaces/transaction";
 import { BigInteger } from "big-integer";
 import * as bigInt from 'big-integer';
+import { Block } from "../interfaces/block";
 
 export class BlockchainService {
     public readonly MIN_TRANSACTION_FEE = this.softUni2Uni(0.0001);
 
-    public calculatekBlockHash(prevBlockHash: string, transactions: Transaction[], nonce): string {
+    public calculatekBlockHash(block: Block): string {
         // sort transaction by create timne
-        let trxsSorted = _.sortBy(transactions, ['timeCreated']);
+        let trxsSorted = _.sortBy(block.transactions, ['timeCreated']);
         let trxsHashes: string[] = _.map(trxsSorted, 'transactionHash');
 
-        return CryptoJS.SHA256(JSON.stringify([prevBlockHash, trxsHashes, nonce])).toString();
+        return CryptoJS.SHA256(JSON.stringify([block.prevBlockHash, trxsHashes, block.timeCreated, block.nonce])).toString();
     }
 
 
@@ -54,17 +55,17 @@ export class BlockchainService {
      * Calculate how many leading zeros `hash` have
      * @param hash 
      */
-    public calculateHashDifficulty(hash: string):number {
+    public calculateHashDifficulty(hash: string): number {
         for (let i = 0; i < hash.length; i++) {
-            if (hash[i] !== '0') return i; 
+            if (hash[i] !== '0') return i;
         }
     }
 
     // Uni - the smallest unit
     // SoftUni - the smallest unit (10^18 uni)
-    public uni2SoftUni(value: string | BigInteger, power: number): number {
-        let intPart:string = value.toString().slice(0,-18);
-        let decPart:string = _.padStart(value.toString().slice(-18), 18, '0');
+    public uni2SoftUni(value: string | BigInteger): number {
+        let intPart: string = value.toString().slice(0, -18);
+        let decPart: string = _.padStart(value.toString().slice(-18), 18, '0');
 
         return parseFloat(intPart + '.' + decPart);
     }

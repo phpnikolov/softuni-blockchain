@@ -1,20 +1,18 @@
 <table class="table">
     <thead>
         <tr>
-            <th scope="col">Height</th>
             <th scope="col">Block</th>
             <th scope="col">Timestamp</th>
-            <th scope="col">Transactions</th>
+            <th scope="col" class="text-right">Transactions</th>
         </tr>
     </thead>
     <tbody>
         <tr *ngFor="let block of blocks">
-            <td>{{block.index}}</td>
             <td>
                 <a title="{{block.blockHash}}" [routerLink]="['/blocks', block.blockHash]">{{block.blockHash | slice:0:12}}...</a>
             </td>
             <td>{{block.timeCreated | date:'yyyy-MM-dd HH:mm:ss'}}</td>
-            <td><a [routerLink]="['/blocks', block.blockHash, 'transactions']">{{block.transactions.length}}</a></td>
+            <td class="text-right"><a [routerLink]="['/blocks', block.blockHash, 'transactions']">{{block.transactions.length}}</a></td>
         </tr>
     </tbody>
 </table>

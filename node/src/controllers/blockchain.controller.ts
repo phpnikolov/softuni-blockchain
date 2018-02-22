@@ -15,55 +15,32 @@ export class BlockchainController {
     private blockchain: Block[] = [];
     public minerReward: string = this.blockchainService.softUni2Uni(5); // 5 SoftUni
     private pendingTrxs: Transaction[] = [];
+    public difficulty: number = 4
 
 
-    public constructor(public difficulty: number) {
+    public constructor() {
 
     }
 
-    public createBlock(blockTrxs: Transaction[], nonce: number, timeCreated: number): boolean {
-        let isGenesisBlock = (this.blockchain.length === 0);
+    public createBlock(nextBlock: Block): boolean {
 
-        let newBlock: Block;
-        let prevBlock: Block;
-        
-        if (isGenesisBlock) {
-            newBlock = {
-                index: 0,
-                prevBlockHash: Array(64).join("0"),
-                difficulty: 0,
-                transactions: blockTrxs,
-                timeCreated: timeCreated,
-                nonce: nonce
-            };
-        }
-        else {
-            prevBlock = this.getLastBlock();
-
-            newBlock = {
-                index: prevBlock.index + 1,
-                prevBlockHash: prevBlock.blockHash,
-                difficulty: this.difficulty,
-                transactions: blockTrxs,
-                timeCreated: timeCreated,
-                nonce: nonce
-            };
-        }
-
-        newBlock.blockHash = this.blockchainService.calculatekBlockHash(newBlock.prevBlockHash, newBlock.transactions, newBlock.nonce);
+        nextBlock.blockHash = this.blockchainService.calculatekBlockHash(nextBlock);
 
         // set blockHash
-        for (let i = 0; i < blockTrxs.length; i++) {
-            blockTrxs[i].blockHash = newBlock.blockHash;
+        for (let i = 0; i < nextBlock.transactions.length; i++) {
+            nextBlock.transactions[i].blockHash = nextBlock.blockHash;
         }
 
         // validate block
-        if (!isGenesisBlock) {
-            this.validateBlock(newBlock, prevBlock);
+        if (this.blockchain.length === 0) {
+            // skip validation for the genesis block
+        }
+        else {
+            this.validateBlock(nextBlock, this.getLastBlock());
         }
         
         // adds the block to the chain
-        this.blockchain.push(newBlock);
+        this.blockchain.push(nextBlock);
 
         // removes pending transactions
         this.filterPendingTransactions();
@@ -168,7 +145,8 @@ export class BlockchainController {
         if (newBlock.prevBlockHash !== prevBlock.blockHash) {
             throw 'Invalid previous block hash.';
         }
-        if (this.blockchainService.calculatekBlockHash(prevBlock.blockHash, newBlock.transactions, newBlock.nonce) != newBlock.blockHash) {
+        
+        if (this.blockchainService.calculatekBlockHash(newBlock) != newBlock.blockHash) {
             throw 'Invalid block hash.'
         }
 
