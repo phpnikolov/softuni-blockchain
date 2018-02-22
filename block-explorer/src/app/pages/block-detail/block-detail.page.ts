@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Block } from '../../interfaces/block';
 import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { AlertsService } from '../../services/alerts.service';
 
 @Component({
   templateUrl: './block-detail.page.html',
@@ -17,7 +18,8 @@ export class BlockDetailPage implements OnInit {
   private block: Block;
   constructor(
     private route: ActivatedRoute,
-    private httpClient: HttpClient
+    private httpClient: HttpClient,
+    private alerts: AlertsService
   ) { }
 
   ngOnInit() {
@@ -46,6 +48,16 @@ export class BlockDetailPage implements OnInit {
     }).subscribe(
       (data: Block) => {
         this.block = data;
+      },
+      (httpErr) => {
+        let errMsg = `Can't Connect to the Node (${this.env.nodeUrl}).`;
+        if (httpErr.error && httpErr.error.error) {
+          errMsg = httpErr.error.error;
+        }
+
+        this.block = undefined;
+        this.alerts.clearAlerts();
+        this.alerts.addError(errMsg);
       }
     );
   }

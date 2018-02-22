@@ -3,6 +3,7 @@ import { Transaction } from '../../interfaces/transaction';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { AlertsService } from '../../services/alerts.service';
 
 
 @Component({
@@ -17,7 +18,8 @@ export class TransactionDetailPage implements OnInit {
   private transaction:Transaction;
   constructor(
     private route: ActivatedRoute,
-    private httpClient:HttpClient
+    private httpClient:HttpClient,
+    private alerts: AlertsService
   ) { }
 
   ngOnInit() {
@@ -47,6 +49,16 @@ export class TransactionDetailPage implements OnInit {
     }).subscribe(
       (data:Transaction) => {
         this.transaction = data;
+      },
+      (httpErr) => {
+        let errMsg = `Can't Connect to the Node (${this.env.nodeUrl}).`;
+        if (httpErr.error && httpErr.error.error) {
+          errMsg = httpErr.error.error;
+        }
+
+        this.transaction = undefined;
+        this.alerts.clearAlerts();
+        this.alerts.addError(errMsg);
       });
   }
 }

@@ -21,6 +21,8 @@ import { AccountDetailPage } from './pages/account-detail/account-detail.page';
 import { PageNotFoundPage } from './pages/page-not-found/page-not-found.page';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { BlockchainService } from './services/blockchain.service';
+import { AlertsComponent } from './components/alerts/alerts.component';
+import { AlertsService } from './services/alerts.service';
 
 
 
@@ -90,7 +92,8 @@ const appRoutes: Routes = [
     TransactionDetailPage,
     AccountDetailPage,
     PageNotFoundPage,
-    NavbarComponent
+    NavbarComponent,
+    AlertsComponent,
   ],
   imports: [
     BrowserModule,
@@ -103,7 +106,8 @@ const appRoutes: Routes = [
   providers: [
     StorageService,
     CryptoService,
-    BlockchainService
+    BlockchainService,
+    AlertsService
   ],
   bootstrap: [AppComponent]
 })

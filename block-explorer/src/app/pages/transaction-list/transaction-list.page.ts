@@ -5,6 +5,7 @@ import * as _ from 'lodash';
 import { ActivatedRoute } from '@angular/router';
 import { BlockchainService } from '../../services/blockchain.service';
 import { environment } from '../../../environments/environment';
+import { AlertsService } from '../../services/alerts.service';
 
 @Component({
   templateUrl: './transaction-list.page.html',
@@ -17,7 +18,8 @@ export class TransactionListPage implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private httpClient: HttpClient,
-    public blockchain: BlockchainService
+    public blockchain: BlockchainService,
+    private alerts: AlertsService
   ) { }
 
   ngOnInit() {
@@ -56,6 +58,16 @@ export class TransactionListPage implements OnInit {
     }).subscribe(
       (data: Transaction[]) => {
         this.transactions = _.orderBy(data, ['timeCreated'], ['desc']);
+      },
+      (httpErr) => {
+        let errMsg = `Can't Connect to the Node (${this.env.nodeUrl}).`;
+        if (httpErr.error && httpErr.error.error) {
+          errMsg = httpErr.error.error;
+        }
+
+        this.transactions = [];
+        this.alerts.clearAlerts();
+        this.alerts.addError(errMsg);
       }
     );
   }

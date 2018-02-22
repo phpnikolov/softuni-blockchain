@@ -6,6 +6,7 @@ import { BlockchainService } from '../../services/blockchain.service';
 import * as _ from "lodash";
 import { BigInteger } from 'big-integer';
 import { environment } from '../../../environments/environment';
+import { AlertsService } from '../../services/alerts.service';
 
 @Component({
   templateUrl: './account-detail.page.html',
@@ -20,7 +21,8 @@ export class AccountDetailPage implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private httpClient: HttpClient,
-    public blockchain: BlockchainService
+    public blockchain: BlockchainService,
+    private alerts: AlertsService
   ) { }
 
   ngOnInit() {
@@ -51,7 +53,18 @@ export class AccountDetailPage implements OnInit {
     }).subscribe(
       (data: Transaction[]) => {
         this.accountTransactions = data;
-      });
+      },
+      (httpErr) => {
+        let errMsg = `Can't Connect to the Node (${this.env.nodeUrl}).`;
+        if (httpErr.error && httpErr.error.error) {
+          errMsg = httpErr.error.error;
+        }
+
+        this.accountTransactions = [];
+        this.alerts.clearAlerts();
+        this.alerts.addError(errMsg);
+      }
+    );
   }
 
   public getBalance(): BigInteger {
