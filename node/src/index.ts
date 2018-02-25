@@ -57,7 +57,10 @@ app.post('/blocks', [
             });
         });
 
-        return res.status(201).json();
+        return res.status(201).json({
+            status: 'success',
+            message: 'Block accepted'
+        });
     }
     catch (ex) {
         return res.status(400).json({ error: ex });
@@ -149,7 +152,10 @@ app.post('/transactions/pending', [
             });
         });
 
-        return res.status(201).json();
+        return res.status(201).json({
+            status: 'success',
+            message: 'Transaction accepted'
+        });
     }
     catch (ex) {
         return res.status(400).json({ error: ex });
@@ -211,10 +217,20 @@ app.post('/peers', [
 
     try {
         let isAdded: boolean = nodeCtrl.addPeer(req.body['url']);
-        return res.status(isAdded ? 201 : 200).json();
+
+        if (isAdded) {
+            return res.status(201).json({
+                status: 'success',
+                message: 'Peer added'
+            });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Peer already exists'
+        });
     }
     catch (ex) {
-        console.log(ex);
         return res.status(400).json({ error: ex });
     }
 });
