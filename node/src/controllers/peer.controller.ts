@@ -10,7 +10,7 @@ export class PeerController {
 
     }
 
-    public getOrigin(): string {
+    public getNodeUrl(): string {
         return this.origin;
     }
 

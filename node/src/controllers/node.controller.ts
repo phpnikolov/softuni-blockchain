@@ -12,7 +12,7 @@ let pjson = require('../../package.json');
 
 export class NodeController {
 
-    private blockchainService:BlockchainService = new BlockchainService;
+    private blockchainService: BlockchainService = new BlockchainService;
     public chain: BlockchainController;
     private peers: PeerController[] = [];
 
@@ -28,9 +28,8 @@ export class NodeController {
         }
         txFaucet.transactionHash = this.blockchainService.calculateTransactionHash(txFaucet);
 
-        let genesisBlock:Block = {
-            prevBlockHash: Array(64).join('0'),
-            difficulty: 0,
+        let genesisBlock: Block = {
+            prevBlockHash: Array(65).join('0'), // 64 zeroes
             transactions: [txFaucet],
             timeCreated: (new Date()).getTime(),
             nonce: 0
@@ -54,31 +53,31 @@ export class NodeController {
     public getInfo(): NodeInfo {
         let info: NodeInfo = {
             about: pjson.description + ' / ' + pjson.version,
-            origin: this.getOrigin(),
+            nodeUrl: this.getNodeUrl(),
             difficulty: this.chain.difficulty,
-            comulativePoW: this.chain.getCumulativePoW(),
-            minerReward: this.chain.minerReward,
+            cumulativeDifficulty: this.chain.getCumulativeDifficulty(),
+            blockReward: this.chain.blockReward,
 
-            blocks: this.chain.getBlocks().length,
+            blocksCount: this.chain.getBlocks().length,
             lastBlockHash: this.chain.getLastBlock().blockHash,
 
             transactions: {
-                confirmed: this.chain.getTransactions().length,
-                pending: this.chain.getPendingTransactions().length
+                confirmedCount: this.chain.getConfirmedTransactions().length,
+                pendingCount: this.chain.getPendingTransactions().length
             },
 
-            peers: this.peers.length
+            peersCount: this.peers.length
         };
 
         return info;
     }
 
-    public getOrigin(): string {
+    public getNodeUrl(): string {
         return (new URL(this.nodeUrl)).origin;
     }
 
     public getPeersOrigins(): string[] {
-        return _.map(this.peers, (peer: PeerController) => { return peer.getOrigin(); })
+        return _.map(this.peers, (peer: PeerController) => { return peer.getNodeUrl(); })
     }
 
     public addPeer(url: string): boolean {
@@ -88,7 +87,7 @@ export class NodeController {
         // http://hodname:port
         let newPeerOrigin = urlParsed.origin;
 
-        if (this.getOrigin() == newPeerOrigin) {
+        if (this.getNodeUrl() == newPeerOrigin) {
             // this is our node
             return false;
         }
@@ -153,7 +152,7 @@ export class NodeController {
     private checkForLongerChain(peer: PeerController) {
         let that = this;
         peer.getInfo().then((info: NodeInfo) => {
-            if (info.comulativePoW > that.chain.getCumulativePoW()) {
+            if (info.cumulativeDifficulty > that.chain.getCumulativeDifficulty()) {
                 // longer chain, get it and check it
                 peer.getBlockchain().then((blocks: Block[]) => {
                     that.approveNewChain(blocks);
@@ -184,7 +183,7 @@ export class NodeController {
             }
         }
 
-        if (extChain.getCumulativePoW() > this.chain.getCumulativePoW()) {
+        if (extChain.getCumulativeDifficulty() > this.chain.getCumulativeDifficulty()) {
             // new longer chain
             this.chain = extChain;
         }

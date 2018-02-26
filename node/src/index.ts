@@ -25,7 +25,6 @@ app.get('/info', (req, res) => {
 // Miners submit their work here
 app.post('/blocks', [
     expressValidator.check('prevBlockHash', "'prevBlockHash' is required parameter").exists(),
-    expressValidator.check('difficulty', "'difficulty' is required parameter").exists(),
     expressValidator.check('transactions', "'transactions' is required parameter").exists(),
     expressValidator.check('timeCreated', "'timeCreated' is required parameter").exists(),
     expressValidator.check('nonce', "'nonce' is required parameter").exists()
@@ -38,7 +37,6 @@ app.post('/blocks', [
 
     let nextBlock:Block = {
         prevBlockHash: req.body['prevBlockHash'],
-        difficulty: Number(req.body['difficulty']),
         transactions: req.body['transactions'],
         timeCreated: Number(req.body['timeCreated']),
         nonce: Number(req.body['nonce'])
@@ -254,7 +252,7 @@ new class extends CliService {
     }
 
     public showMenu() {
-        this.quetion(`\nEnter operation ['info', 'add-peer', 'difficulty' 'exit']`).then((operation) => {
+        this.quetion(`\nEnter operation ['info', 'add-peer', 'exit']`).then((operation) => {
             operation = operation.toLocaleLowerCase().trim();
             switch (operation) {
                 case 'info':
@@ -276,16 +274,6 @@ new class extends CliService {
                         catch (ex) {
                             console.error(ex);
                         }
-                        this.showMenu();
-                    }).catch(() => {
-                        this.showMenu();
-                    });
-                    break;
-
-                case 'difficulty':
-                    this.quetion('Enter difficulty', nodeCtrl.chain.difficulty.toString()).then((difficulty: string) => {
-                        nodeCtrl.chain.difficulty = parseInt(difficulty);
-                        console.log('Difficulty is now: ' + nodeCtrl.chain.difficulty);
                         this.showMenu();
                     }).catch(() => {
                         this.showMenu();

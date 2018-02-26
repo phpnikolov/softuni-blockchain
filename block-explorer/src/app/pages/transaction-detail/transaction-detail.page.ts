@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { AlertsService } from '../../services/alerts.service';
+import { BlockchainService } from '../../services/blockchain.service';
 
 
 @Component({
@@ -17,6 +18,7 @@ export class TransactionDetailPage implements OnInit {
   private readonly env = environment;
   private transaction:Transaction;
   constructor(
+    public blockchain: BlockchainService,
     private route: ActivatedRoute,
     private httpClient:HttpClient,
     private alerts: AlertsService

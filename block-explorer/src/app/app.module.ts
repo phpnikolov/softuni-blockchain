@@ -12,6 +12,7 @@ import { HttpClientModule } from '@angular/common/http';
 
 import { BlockListPage } from './pages/block-list/block-list.page';
 import { BlockDetailPage } from './pages/block-detail/block-detail.page';
+import { NodeInfoPage } from './pages/node-info/node-info.page';
 
 
 import { TransactionListPage } from './pages/transaction-list/transaction-list.page';
@@ -23,6 +24,7 @@ import { NavbarComponent } from './components/navbar/navbar.component';
 import { BlockchainService } from './services/blockchain.service';
 import { AlertsComponent } from './components/alerts/alerts.component';
 import { AlertsService } from './services/alerts.service';
+
 
 
 
@@ -78,6 +80,10 @@ const appRoutes: Routes = [
     ]
   },
   {
+    path: 'node-info',
+    component: NodeInfoPage,
+  },
+  {
     path: '**',
     component: PageNotFoundPage
   }
@@ -91,9 +97,11 @@ const appRoutes: Routes = [
     TransactionListPage,
     TransactionDetailPage,
     AccountDetailPage,
+    NodeInfoPage,
     PageNotFoundPage,
     NavbarComponent,
     AlertsComponent,
+   
   ],
   imports: [
     BrowserModule,

@@ -51,14 +51,18 @@ export class BlockchainService {
         return balance;
     }
 
-    /**
-     * Calculate how many leading zeros `hash` have
-     * @param hash 
-     */
+    
     public calculateHashDifficulty(hash: string): number {
+        let difficulty: number = 1;
         for (let i = 0; i < hash.length; i++) {
-            if (hash[i] !== '0') return i;
+            difficulty *= 16 - parseInt(hash[i], 16);
+
+            if (hash[i] != '0') {
+                break;
+            }
         }
+
+        return difficulty;
     }
 
     // Uni - the smallest unit

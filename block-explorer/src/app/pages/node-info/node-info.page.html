@@ -1,0 +1,53 @@
+<h4>Node Info</h4>
+<div class="card">
+    <div class="card-body">
+        <form (submit)="changeNode(nodeUrl)">
+            <div class="form-group">
+                <label>Url</label>
+                <input name="url" type="text" class="form-control" [(ngModel)]="nodeUrl" placeholder="http://127.0.0.1:5555">
+            </div>
+            <button type="submit" class="btn btn-primary">Change</button>
+        </form>
+    </div>
+</div>
+
+<table class="table mt-4" *ngIf="nodeInfo">
+    <tr>
+        <th width="200">About</th>
+        <td>{{nodeInfo.about}}</td>
+    </tr>
+    <tr>
+        <th width="200">Node Url</th>
+        <td>{{nodeInfo.nodeUrl}}</td>
+    </tr>
+    <tr>
+        <th>Network Difficulty</th>
+        <td>{{nodeInfo.cumulativeDifficulty | number}}</td>
+    </tr>
+    <tr>
+        <th>Block Difficulty</th>
+        <td>{{nodeInfo.difficulty | number}}</td>
+    </tr>
+    <tr>
+        <th>Block Reward</th>
+        <td>{{blockchain.uni2SoftUni(nodeInfo.blockReward) | number:'1.0-8'}} SoftUni</td>
+    </tr>
+    <tr>
+        <th>Blocks Count</th>
+        <td>{{nodeInfo.blocksCount}}</td>
+    </tr>
+    <tr>
+        <th>Confirmed Tx Count</th>
+        <td>{{nodeInfo.transactions.confirmedCount | number}}</td>
+    </tr>
+    <tr>
+        <th>Pending Tx Count</th>
+        <td>{{nodeInfo.transactions.pendingCount | number}}</td>
+    </tr>
+    <tr>
+        <th>Peers</th>
+        <td>
+            <div *ngFor="let peer of peers">{{peer}}</div>
+        </td>
+    </tr>
+</table>

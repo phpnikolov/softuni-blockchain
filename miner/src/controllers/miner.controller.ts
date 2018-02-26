@@ -5,14 +5,13 @@ import { Transaction } from '../interfaces/transaction';
 import { BigInteger } from "big-integer";
 import * as bigInt from 'big-integer';
 import { Block } from '../interfaces/block';
+import { NodeInfo } from '../interfaces/node-info';
 
 export class MinerController {
     private blockchainService: BlockchainService = new BlockchainService;
-    private nodeUri: string;
+    private nodeUrl: string;
 
-    private prevBlockHash: string;
-    private difficulty: number;
-    private minerReward: string;
+    private pendingTxs: Transaction[] = [];
     private nextBlock: Block;
 
     private processedHashes = 0;
@@ -21,9 +20,8 @@ export class MinerController {
         private nodeHostname: string,
         private miningAddress: string
     ) {
-        this.nodeUri = `http://${this.nodeHostname}:5555`;
+        this.nodeUrl = `http://${this.nodeHostname}:5555`;
     }
-
 
 
     /** 
@@ -31,51 +29,52 @@ export class MinerController {
     */
     private sync(): void {
         request({
-            uri: this.nodeUri + '/info',
+            uri: this.nodeUrl + '/info',
             json: true
-        }, (error, response, body) => {
+        }, (error, response, nodeInfo: NodeInfo) => {
             if (!error && response.statusCode == 200) {
-                this.prevBlockHash = body.lastBlockHash;
-                this.difficulty = Number(body.difficulty);
-                this.minerReward = body.minerReward;
-            }
-            else {
-                console.error('Can\'n get info from the Node!');
-            }
-        });
 
-        request({
-            uri: this.nodeUri + '/transactions/pending',
-            json: true
-        }, (error, response, pendingTxs: Transaction[]) => {
-            if (!error && response.statusCode == 200) {
-                let feeSum = bigInt(0);
+                let txsFees = bigInt(0);
 
-                pendingTxs.forEach(tx => {
-                    feeSum = feeSum.add(tx.fee);
+                this.pendingTxs.forEach(tx => {
+                    txsFees = txsFees.add(tx.fee);
                 });
 
-                // add miner reward transaction
-                let trxReward: Transaction = {
+                // miner block reward
+                let txReward: Transaction = {
                     to: this.miningAddress,
                     fee: this.blockchainService.softUni2Uni(0),
-                    amount: feeSum.add(this.minerReward).toString(),
+                    amount: txsFees.add(nodeInfo.blockReward).toString(), // block reward + txs fees
                     timeCreated: (new Date()).getTime()
                 };
 
-                trxReward.transactionHash = this.blockchainService.calculateTransactionHash(trxReward);
+                txReward.transactionHash = this.blockchainService.calculateTransactionHash(txReward);
 
-                pendingTxs.unshift(trxReward);
 
                 this.nextBlock = {
-                    prevBlockHash: this.prevBlockHash,
-                    difficulty: this.difficulty,
-                    transactions: pendingTxs,
+                    prevBlockHash: nodeInfo.lastBlockHash,
+                    difficulty: Number(nodeInfo.difficulty),
+                    transactions: [txReward].concat(this.pendingTxs),
                     timeCreated: (new Date()).getTime(),
                     nonce: 0
                 }
             }
             else {
+                this.nextBlock = undefined;
+                console.error('Can\'n get info from the Node!');
+            }
+        });
+
+        request({
+            uri: this.nodeUrl + '/transactions/pending',
+            json: true
+        }, (error, response, pendingTxs: Transaction[]) => {
+            if (!error && response.statusCode == 200) {
+                this.pendingTxs = pendingTxs;
+            }
+            else {
+                this.pendingTxs = [];
+                this.nextBlock = undefined;
                 console.error('Can\'n get pending transactions from the Node!');
             }
         });
@@ -94,8 +93,8 @@ export class MinerController {
         this.processedHashes++;
         let hashDifficulty: number = this.blockchainService.calculateHashDifficulty(blockHash);
 
-        if (hashDifficulty >= this.difficulty) {
-            console.log(`Block found!!! Nonce ${this.nextBlock.nonce}; Hash: ${blockHash}`);
+        if (hashDifficulty >= this.nextBlock.difficulty) {
+            console.log(`Block found!!! Nonce ${this.nextBlock.nonce}; Block Hash: ${blockHash}`);
 
             this.submitBlock(this.nextBlock);
             this.nextBlock = undefined;
@@ -112,7 +111,7 @@ export class MinerController {
     private submitBlock(nextBlock: Block): void {
         request({
             method: 'POST',
-            uri: this.nodeUri + '/blocks',
+            uri: this.nodeUrl + '/blocks',
             json: nextBlock
         }, (error, response, body) => {
             if (!error && response.statusCode == 201) {

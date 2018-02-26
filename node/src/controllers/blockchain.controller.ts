@@ -10,21 +10,23 @@ import * as bigInt from 'big-integer';
 export class BlockchainController {
     private cryptoService: CryptoService = new CryptoService;
     private blockchainService: BlockchainService = new BlockchainService;
+    public readonly targetTimeBetweenBlocks = 15000; // 15 seconds in milliseconds
 
 
     private blockchain: Block[] = [];
-    public minerReward: string = this.blockchainService.softUni2Uni(5); // 5 SoftUni
+    public blockReward: string = this.blockchainService.softUni2Uni(5); // 5 SoftUni
     private pendingTrxs: Transaction[] = [];
-    public difficulty: number = 4
+    public difficulty: number = 45056; // hash < 0005
 
 
     public constructor() {
 
     }
 
-    public createBlock(nextBlock: Block): boolean {
+    public createBlock(nextBlock: Block): void {
 
         nextBlock.blockHash = this.blockchainService.calculatekBlockHash(nextBlock);
+        nextBlock.difficulty = this.blockchainService.calculateHashDifficulty(nextBlock.blockHash);
 
         // set blockHash
         for (let i = 0; i < nextBlock.transactions.length; i++) {
@@ -38,13 +40,34 @@ export class BlockchainController {
         else {
             this.validateBlock(nextBlock, this.getLastBlock());
         }
-        
+
         // adds the block to the chain
         this.blockchain.push(nextBlock);
 
+        // adjust difficulty
+        this.adjustDifficulty();
+
         // removes pending transactions
         this.filterPendingTransactions();
-        return true;
+    }
+
+    /** 
+     * make correction in the difficulty on every 10 blocks
+    */
+    private adjustDifficulty(): void {
+        if (this.blockchain.length % 10 !== 0) {
+            return;
+        }
+
+        // last 50 blocks without genesis
+        let blocks: Block[] = this.blockchain.slice(1).slice(-50);
+
+        let expectedTime: number = this.targetTimeBetweenBlocks * blocks.length;
+        let actualTime: number = (blocks.slice(-1)[0].timeCreated - blocks[0].timeCreated);
+
+        let correction = expectedTime / actualTime;
+
+        this.difficulty = Math.ceil(this.difficulty * correction);
     }
 
     public getBlocks(): Block[] {
@@ -108,7 +131,7 @@ export class BlockchainController {
 
 
     private validateBlock(newBlock: Block, prevBlock: Block): void {
-        let minerReward = bigInt(this.minerReward);
+        let minerReward = bigInt(this.blockReward);
 
         newBlock.transactions.forEach(tx => {
             minerReward = minerReward.add(tx.fee);
@@ -145,7 +168,7 @@ export class BlockchainController {
         if (newBlock.prevBlockHash !== prevBlock.blockHash) {
             throw 'Invalid previous block hash.';
         }
-        
+
         if (this.blockchainService.calculatekBlockHash(newBlock) != newBlock.blockHash) {
             throw 'Invalid block hash.'
         }
@@ -155,7 +178,7 @@ export class BlockchainController {
         }
     }
 
-    private valdiateRewardTransaction(trx:Transaction, reward:BigInteger) {
+    private valdiateRewardTransaction(trx: Transaction, reward: BigInteger) {
         let trxAmount: BigInteger = bigInt(trx.amount);
         let trxFee: BigInteger = bigInt(trx.fee);
 
@@ -198,7 +221,7 @@ export class BlockchainController {
 
         // validate fee
         if (trxFee.lesser(this.blockchainService.MIN_TRANSACTION_FEE)) {
-            throw `Fee must be greater than ${this.blockchainService.MIN_TRANSACTION_FEE}.`;
+            throw `Fee must be greater than ${this.blockchainService.MIN_TRANSACTION_FEE} Uni.`;
         }
 
         // validate signature
@@ -210,7 +233,7 @@ export class BlockchainController {
         if (senderBalance.lesser(trx.amount)) {
             throw 'Not enough balance.';
         }
-        
+
     }
 
     /** 
@@ -223,16 +246,15 @@ export class BlockchainController {
     }
 
     /**
-     * unit to measure PoW for entire blockchain
-     * SUM(16^block difficulty)
+     * unit to measure Difficulty for entire blockchain
      */
-    public getCumulativePoW(): number {
-        let comulativePow: number = 0;
+    public getCumulativeDifficulty(): number {
+        let difficulty: number = 0;
 
         this.blockchain.forEach(block => {
-            comulativePow += Math.pow(16, block.difficulty);
+            difficulty += this.blockchainService.calculateHashDifficulty(block.blockHash);
         });
 
-        return comulativePow;
+        return difficulty;
     }
 }
