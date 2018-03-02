@@ -12,7 +12,7 @@
         </tr>
     </thead>
     <tbody>
-        <tr *ngFor="let tx of transactions" [ngClass]="{'text-muted' : !tx.blockHash}" [routerLink]="['/transactions', tx.transactionHash]">
+        <tr *ngFor="let tx of transactions" [ngClass]="{'text-muted' : !tx.blockHash}">
             <td>
                 <a title="{{tx.transactionHash}}" *ngIf="tx.transactionHash" [routerLink]="['/transactions', tx.transactionHash]">{{tx.transactionHash | slice:0:12}}...</a>
             </td>
