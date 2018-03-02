@@ -18,7 +18,7 @@ export class BlockchainService {
 
 
     public calculateTransactionHash(trx: Transaction): string {
-        return CryptoJS.SHA256(JSON.stringify([trx.from, trx.to, trx.amount, trx.timeCreated])).toString();
+        return CryptoJS.SHA256(JSON.stringify([trx.from, trx.to, trx.amount, trx.fee, trx.timeCreated])).toString();
     }
 
     public calculateBalance(address: string, confirmedTxs: Transaction[], pendingTxs: Transaction[]): BigInteger {
